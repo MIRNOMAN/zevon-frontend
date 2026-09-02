@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight } from "lucide-react";
 import { CartItem } from "./types";
+import { cn } from "@/lib/utils";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -34,18 +35,53 @@ const INITIAL_CART_ITEMS: CartItem[] = [
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const [items, setItems] = useState<CartItem[]>(INITIAL_CART_ITEMS);
+  const [isRendered, setIsRendered] = useState(false);
+  const [isActive, setIsActive] = useState(false);
 
-  // Disable background scroll when drawer is open
+  // Silky smooth right-to-left slide-in and left-to-right slide-out
   useEffect(() => {
+    let animTimer: NodeJS.Timeout;
+    let frame1: number;
+    let frame2: number;
+
     if (isOpen) {
+      animTimer = setTimeout(() => {
+        setIsRendered(true);
+        frame1 = requestAnimationFrame(() => {
+          frame2 = requestAnimationFrame(() => {
+            setIsActive(true);
+          });
+        });
+      }, 0);
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "unset";
+      animTimer = setTimeout(() => {
+        setIsActive(false);
+        const exitTimer = setTimeout(() => {
+          setIsRendered(false);
+          document.body.style.overflow = "unset";
+        }, 360);
+        return () => clearTimeout(exitTimer);
+      }, 0);
     }
+
     return () => {
-      document.body.style.overflow = "unset";
+      clearTimeout(animTimer);
+      cancelAnimationFrame(frame1);
+      cancelAnimationFrame(frame2);
     };
   }, [isOpen]);
+
+  // Handle ESC key for accessibility
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   const updateQuantity = (id: string, delta: number) => {
     setItems((prev) =>
@@ -71,19 +107,27 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   );
   const totalCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  if (!isOpen) return null;
+  if (!isRendered) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
+      {/* Backdrop with silky smooth fade */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in-0 duration-200"
+        className={cn(
+          "fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-350 ease-out",
+          isActive ? "opacity-100" : "opacity-0"
+        )}
         onClick={onClose}
       />
 
-      {/* Drawer Container (100% width on mobile, sleek slide-in without clipping) */}
+      {/* Drawer Container (Full visible right-to-left slide-in & slide-out) */}
       <div className="fixed inset-y-0 right-0 max-w-full flex">
-        <div className="relative w-screen max-w-xs sm:max-w-md bg-white dark:bg-neutral-900 shadow-2xl flex flex-col border-l border-neutral-200 dark:border-neutral-800 animate-in slide-in-from-right duration-300">
+        <div
+          className={cn(
+            "relative w-screen max-w-xs sm:max-w-md bg-white dark:bg-neutral-900 shadow-2xl flex flex-col border-l border-neutral-200 dark:border-neutral-800 transition-transform duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            isActive ? "translate-x-0" : "translate-x-full"
+          )}
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
             <div className="flex items-center gap-2">

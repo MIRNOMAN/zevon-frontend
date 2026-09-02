@@ -30,11 +30,11 @@ export function MobileDrawer({
   wishlistCount = 2,
 }: MobileDrawerProps) {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    men: true, // open first by default for discoverability
+    men: true,
   });
   const pathname = usePathname();
 
-  // Disable background scroll when drawer is open
+  // Lock background scroll when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -53,19 +53,31 @@ export function MobileDrawer({
     }));
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden lg:hidden">
+    <div
+      className={cn(
+        "fixed inset-0 z-50 overflow-hidden lg:hidden transition-all duration-300",
+        isOpen ? "pointer-events-auto visible" : "pointer-events-none invisible"
+      )}
+      aria-hidden={!isOpen}
+    >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in-0 duration-200"
+        className={cn(
+          "fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 ease-out",
+          isOpen ? "opacity-100" : "opacity-0"
+        )}
         onClick={onClose}
       />
 
       {/* Drawer Panel */}
       <div className="fixed inset-y-0 left-0 max-w-full flex">
-        <div className="relative w-screen max-w-[19rem] sm:max-w-xs bg-white dark:bg-neutral-900 shadow-2xl flex flex-col border-r border-neutral-200 dark:border-neutral-800 animate-in slide-in-from-left duration-300">
+        <div
+          className={cn(
+            "relative w-screen max-w-[19rem] sm:max-w-xs bg-white dark:bg-neutral-900 shadow-2xl flex flex-col border-r border-neutral-200 dark:border-neutral-800 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            isOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
             <ZevonLogo className="h-7 w-auto" />

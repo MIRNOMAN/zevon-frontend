@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, TrendingUp, ArrowRight, CornerDownLeft } from "lucide-react";
 import { SEARCH_TRENDING_TAGS } from "./navData";
+import { cn } from "@/lib/utils";
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -15,17 +16,17 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Focus input on open & disable background scroll
+  // Focus input on open & lock background scroll
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => {
+      document.body.style.overflow = "hidden";
+      const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
-      document.body.style.overflow = "hidden";
+      return () => clearTimeout(timer);
     } else {
       document.body.style.overflow = "unset";
     }
-
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -56,18 +57,32 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4">
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 overflow-hidden transition-all duration-250",
+        isOpen ? "pointer-events-auto visible" : "pointer-events-none invisible"
+      )}
+      aria-hidden={!isOpen}
+    >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in-0 duration-200"
+        className={cn(
+          "fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-250 ease-out",
+          isOpen ? "opacity-100" : "opacity-0"
+        )}
         onClick={onClose}
       />
 
-      {/* Modal Dialog */}
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-10 animate-fade-in-scale">
+      {/* Modal Dialog with smooth scale transition */}
+      <div
+        className={cn(
+          "relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-10 transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          isOpen
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-95 -translate-y-2"
+        )}
+      >
         {/* Search Input Bar */}
         <form
           onSubmit={handleSubmit}

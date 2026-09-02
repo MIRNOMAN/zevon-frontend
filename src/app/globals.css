@@ -36,9 +36,10 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Smooth scrolling */
+/* Smooth scrolling & zero layout shift */
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 /* Clean accessible focus ring (excludes text inputs and buttons with custom focus) */
