@@ -1,23 +1,34 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { RootState } from "../store";
+import {
+  saveAuthTokens,
+  saveStoredUser,
+  clearAuthStorage,
+  getStoredAuth,
+} from "@/lib/auth-storage";
+import type { RootState } from "../store";
 
 // ---------------------------------------------------------------------------
-// Types
+// Types matching zevon-server
 // ---------------------------------------------------------------------------
+
+export type UserRole = "CUSTOMER" | "ADMIN" | "MANAGER" | string;
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "user" | "moderator";
-  avatar?: string;
+  phone?: string | null;
+  role: UserRole;
+  avatarUrl?: string | null;
+  createdAt?: string | Date;
 }
 
-interface AuthState {
+export interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -29,44 +40,56 @@ const initialState: AuthState = {
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
+  isInitialized: false,
 };
 
 // ---------------------------------------------------------------------------
 // Slice
 // ---------------------------------------------------------------------------
 
-const authSlice = createSlice({
+export const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
     /**
      * Set user + tokens after login/register.
-     * Call this from your login mutation's `onQueryStarted` or in a component.
+     * Persists tokens in both localStorage and cookies.
      */
     setCredentials: (
       state,
       action: PayloadAction<{
-        user?: User;
+        user?: User | null;
         accessToken: string;
-        refreshToken: string;
-      }>,
+        refreshToken?: string | null;
+      }>
     ) => {
       const { user, accessToken, refreshToken } = action.payload;
 
-      if (user) {
+      if (user !== undefined) {
         state.user = user;
       }
-
       state.accessToken = accessToken;
-      state.refreshToken = refreshToken;
+      if (refreshToken !== undefined) {
+        state.refreshToken = refreshToken;
+      }
       state.isAuthenticated = true;
+      state.isInitialized = true;
+
+      // Persist to storage & cookies
+      saveAuthTokens({
+        accessToken,
+        refreshToken: refreshToken || state.refreshToken,
+        user: user !== undefined ? user : state.user,
+      });
     },
 
     /**
-     * Update only the user profile (e.g. after editing profile).
+     * Update only the user profile (e.g. after editing profile or /auth/me query).
      */
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
+      state.isAuthenticated = true;
+      saveStoredUser(action.payload);
     },
 
     /**
@@ -74,6 +97,12 @@ const authSlice = createSlice({
      */
     updateAccessToken: (state, action: PayloadAction<string>) => {
       state.accessToken = action.payload;
+      state.isAuthenticated = true;
+      saveAuthTokens({
+        accessToken: action.payload,
+        refreshToken: state.refreshToken,
+        user: state.user,
+      });
     },
 
     /**
@@ -84,6 +113,29 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.refreshToken = null;
       state.isAuthenticated = false;
+      state.isInitialized = true;
+      clearAuthStorage();
+    },
+
+    /**
+     * Hydrate state from browser cookies/localStorage on initial client mount.
+     */
+    hydrateAuth: (state) => {
+      const stored = getStoredAuth();
+      if (stored.accessToken) {
+        state.accessToken = stored.accessToken;
+        state.refreshToken = stored.refreshToken;
+        state.user = stored.user;
+        state.isAuthenticated = true;
+      }
+      state.isInitialized = true;
+    },
+
+    /**
+     * Mark auth as initialized even if no tokens were found.
+     */
+    setAuthInitialized: (state) => {
+      state.isInitialized = true;
     },
   },
 });
@@ -92,8 +144,14 @@ const authSlice = createSlice({
 // Actions
 // ---------------------------------------------------------------------------
 
-export const { setCredentials, setUser, updateAccessToken, logout } =
-  authSlice.actions;
+export const {
+  setCredentials,
+  setUser,
+  updateAccessToken,
+  logout,
+  hydrateAuth,
+  setAuthInitialized,
+} = authSlice.actions;
 
 // ---------------------------------------------------------------------------
 // Selectors
@@ -103,24 +161,18 @@ export const selectCurrentUser = (state: RootState) => state.auth.user;
 export const selectAccessToken = (state: RootState) => state.auth.accessToken;
 export const selectRefreshToken = (state: RootState) => state.auth.refreshToken;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
+export const selectIsAuthInitialized = (state: RootState) => state.auth.isInitialized;
 export const selectUserRole = (state: RootState) => state.auth.user?.role ?? null;
 
 /**
  * Check if the current user has one of the required roles.
- *
- * Usage:
- * ```ts
- * const canAccess = useAppSelector((state) =>
- *   selectHasRole(state, ["admin", "moderator"])
- * );
- * ```
  */
 export const selectHasRole = (
   state: RootState,
-  roles: Array<User["role"]>,
+  roles: Array<User["role"]>
 ): boolean => {
   const userRole = state.auth.user?.role;
-  return userRole ? roles.includes(userRole) : false;
+  return userRole ? roles.map((r) => r.toUpperCase()).includes(userRole.toUpperCase()) : false;
 };
 
 // ---------------------------------------------------------------------------
