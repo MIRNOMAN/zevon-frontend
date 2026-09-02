@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { NAV_CATEGORIES } from "./navData";
 import { NavDropdown } from "./NavDropdown";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 function NavItemsList() {
@@ -44,18 +45,14 @@ function NavItemsList() {
           >
             <span>{category.title}</span>
 
-            {/* Highlighted Badges */}
+            {/* Highlighted Badges using shadcn Badge */}
             {category.badge && (
-              <span
-                className={cn(
-                  "text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full tracking-wider transition-transform group-hover:scale-105",
-                  category.badgeVariant === "sale"
-                    ? "bg-rose-500 text-white shadow-sm shadow-rose-500/30 animate-pulse"
-                    : "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-950"
-                )}
+              <Badge
+                variant={category.badgeVariant === "sale" ? "sale" : "new"}
+                className="text-[10px] px-1.5 py-0 h-4 uppercase transition-transform group-hover:scale-105"
               >
                 {category.badge}
-              </span>
+              </Badge>
             )}
 
             {/* Active Indicator Bar */}

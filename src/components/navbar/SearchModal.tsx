@@ -67,9 +67,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-10 animate-in zoom-in-95 fade-in-0 duration-200">
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-10 animate-fade-in-scale">
         {/* Search Input Bar */}
-        <form onSubmit={handleSubmit} className="relative flex items-center px-4 py-3 border-b border-neutral-100 dark:border-neutral-800">
+        <form
+          onSubmit={handleSubmit}
+          className="relative flex items-center px-4 py-3.5 border-b border-neutral-100 dark:border-neutral-800/90 bg-transparent"
+        >
           <Search className="h-5 w-5 text-neutral-400 dark:text-neutral-500 shrink-0 ml-1" />
           <input
             ref={inputRef}
@@ -77,13 +80,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search collections, apparel, accessories..."
-            className="w-full bg-transparent px-3.5 py-1.5 text-base sm:text-lg font-medium text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none"
+            style={{ outline: "none", border: "none", boxShadow: "none" }}
+            className="w-full bg-transparent px-3.5 py-1 text-base sm:text-lg font-medium text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 border-none outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 shadow-none"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors mr-1"
+              className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors mr-1 focus:outline-none"
             >
               <X className="h-4 w-4" />
             </button>
@@ -91,7 +95,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+            className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors focus:outline-none"
           >
             <span>ESC</span>
           </button>

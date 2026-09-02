@@ -83,7 +83,7 @@ export function NavDropdown({ category }: NavDropdownProps) {
       {isOpen && (
         <div
           className={cn(
-            "absolute left-1/2 -translate-x-1/2 top-full pt-2 z-50 w-80 sm:w-96 animate-in fade-in-0 zoom-in-95 duration-200"
+            "absolute left-1/2 -translate-x-1/2 top-full pt-2 z-50 w-80 sm:w-96 animate-fade-in-scale"
           )}
         >
           <div className="relative overflow-hidden rounded-2xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800 p-3 shadow-2xl ring-1 ring-black/5 dark:ring-white/10">

@@ -30,16 +30,16 @@ export function Navbar({
       <header
         className={cn(
           "sticky top-0 z-40 w-full transition-all duration-300",
-          "bg-white/90 dark:bg-neutral-950/90 backdrop-blur-md",
-          "border-b border-neutral-200/80 dark:border-neutral-800/80 shadow-xs",
+          "bg-background/80 backdrop-blur-md",
+          "border-b border-foreground/10 text-foreground shadow-xs",
           className
         )}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8">
           {/* ========================================================= */}
           {/* 1. Left Section: Logo (Desktop) & Hamburger (Mobile)      */}
           {/* ========================================================= */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Mobile Hamburger Button */}
             <button
               type="button"

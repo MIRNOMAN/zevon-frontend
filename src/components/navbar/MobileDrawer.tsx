@@ -15,6 +15,7 @@ import { NAV_CATEGORIES } from "./navData";
 import { ZevonLogo } from "./Logo";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeToggle } from "./ThemeToggle";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface MobileDrawerProps {
@@ -63,16 +64,16 @@ export function MobileDrawer({
       />
 
       {/* Drawer Panel */}
-      <div className="fixed inset-y-0 left-0 max-w-full flex pr-10">
-        <div className="relative w-screen max-w-xs sm:max-w-sm bg-white dark:bg-neutral-900 shadow-2xl flex flex-col border-r border-neutral-200 dark:border-neutral-800 animate-in slide-in-from-left duration-300">
+      <div className="fixed inset-y-0 left-0 max-w-full flex">
+        <div className="relative w-screen max-w-[19rem] sm:max-w-xs bg-white dark:bg-neutral-900 shadow-2xl flex flex-col border-r border-neutral-200 dark:border-neutral-800 animate-in slide-in-from-left duration-300">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
             <ZevonLogo className="h-7 w-auto" />
             <button
               type="button"
               onClick={onClose}
               aria-label="Close navigation menu"
-              className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus:outline-none"
             >
               <X className="h-5 w-5" />
             </button>
@@ -166,16 +167,12 @@ export function MobileDrawer({
                     {category.title}
                   </span>
                   {category.badge && (
-                    <span
-                      className={cn(
-                        "text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider",
-                        isSale
-                          ? "bg-rose-500 text-white"
-                          : "bg-neutral-900 text-white dark:bg-white dark:text-neutral-950"
-                      )}
+                    <Badge
+                      variant={isSale ? "sale" : "new"}
+                      className="text-[10px] px-2 py-0.5 uppercase"
                     >
                       {category.badge}
-                    </span>
+                    </Badge>
                   )}
                 </Link>
               );
@@ -191,9 +188,9 @@ export function MobileDrawer({
                 <Heart className="h-4 w-4 text-rose-500" />
                 <span>Wishlist</span>
               </div>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400">
+              <Badge variant="secondary" className="text-xs bg-rose-500/10 text-rose-600 dark:text-rose-400 border-transparent">
                 {wishlistCount} items
-              </span>
+              </Badge>
             </Link>
           </div>
 
@@ -201,7 +198,7 @@ export function MobileDrawer({
           <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-950/40 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <LanguageSwitcher />
+                <LanguageSwitcher variant="segmented" />
                 <ThemeToggle />
               </div>
 

@@ -56,7 +56,7 @@ export function NavActions({
       >
         <Heart className="h-4 w-4 transition-transform active:scale-90" />
         {wishlistCount > 0 && (
-          <span className="absolute 0 top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-neutral-900 dark:bg-white text-[10px] font-black text-white dark:text-neutral-950 px-1 shadow-sm">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-neutral-900 dark:bg-white text-[10px] font-black text-white dark:text-neutral-950 px-1 shadow-sm">
             {wishlistCount}
           </span>
         )}
@@ -74,7 +74,7 @@ export function NavActions({
       >
         <ShoppingBag className="h-4 w-4 transition-transform active:scale-90" />
         {cartCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white px-1 shadow-sm animate-in zoom-in-50">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white px-1 shadow-sm animate-in zoom-in-50">
             {cartCount}
           </span>
         )}

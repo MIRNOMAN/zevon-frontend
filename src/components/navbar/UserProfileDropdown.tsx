@@ -58,7 +58,7 @@ export function UserProfileDropdown({
 
       {/* Popover Card */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800 p-2 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800 p-2 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50 animate-fade-in-scale">
           {/* User Header Summary */}
           {isLoggedIn ? (
             <div className="px-3 py-2.5 mb-1.5 border-b border-neutral-100 dark:border-neutral-800/80">
