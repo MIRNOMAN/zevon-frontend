@@ -92,6 +92,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <input
             ref={inputRef}
             type="text"
+            suppressHydrationWarning
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search collections, apparel, accessories..."

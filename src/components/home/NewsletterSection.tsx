@@ -79,6 +79,7 @@ export function NewsletterSection() {
                   <input
                     type="email"
                     required
+                    suppressHydrationWarning
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email address..."
