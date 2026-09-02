@@ -42,11 +42,6 @@ export function NavDropdown({ category }: NavDropdownProps) {
     };
   }, []);
 
-  // Close on route change
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
-
   return (
     <div
       className="relative"
@@ -111,6 +106,7 @@ export function NavDropdown({ category }: NavDropdownProps) {
                   <Link
                     key={sub.href}
                     href={sub.href}
+                    onClick={() => setIsOpen(false)}
                     className={cn(
                       "group/item flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-150",
                       isSubActive

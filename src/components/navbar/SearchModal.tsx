@@ -1,0 +1,164 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Search, X, TrendingUp, ArrowRight, CornerDownLeft } from "lucide-react";
+import { SEARCH_TRENDING_TAGS } from "./navData";
+
+interface SearchModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function SearchModal({ isOpen, onClose }: SearchModalProps) {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+
+  // Focus input on open & disable background scroll
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  // Handle ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      router.push(`/shop?search=${encodeURIComponent(query.trim())}`);
+      onClose();
+    }
+  };
+
+  const handleTagClick = (tag: string) => {
+    setQuery(tag);
+    router.push(`/shop?search=${encodeURIComponent(tag)}`);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in-0 duration-200"
+        onClick={onClose}
+      />
+
+      {/* Modal Dialog */}
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-10 animate-in zoom-in-95 fade-in-0 duration-200">
+        {/* Search Input Bar */}
+        <form onSubmit={handleSubmit} className="relative flex items-center px-4 py-3 border-b border-neutral-100 dark:border-neutral-800">
+          <Search className="h-5 w-5 text-neutral-400 dark:text-neutral-500 shrink-0 ml-1" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search collections, apparel, accessories..."
+            className="w-full bg-transparent px-3.5 py-1.5 text-base sm:text-lg font-medium text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors mr-1"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+          >
+            <span>ESC</span>
+          </button>
+        </form>
+
+        {/* Content Section */}
+        <div className="p-5 max-h-[60vh] overflow-y-auto space-y-5">
+          {/* Trending Searches */}
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-3">
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span>Trending Searches</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {SEARCH_TRENDING_TAGS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleTagClick(tag)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-950 transition-all duration-150"
+                >
+                  <span>{tag}</span>
+                  <ArrowRight className="h-3 w-3 opacity-60" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Categories */}
+          <div className="border-t border-neutral-100 dark:border-neutral-800/80 pt-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-2.5">
+              Popular Categories
+            </span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { name: "Graphic T-Shirts", href: "/shop/men/t-shirts" },
+                { name: "Heavyweight Hoodies", href: "/shop/men/outerwear" },
+                { name: "Utility Cargo Pants", href: "/shop/men/pants" },
+                { name: "Women's Co-ords", href: "/shop/women/dresses" },
+                { name: "Caps & Beanies", href: "/shop/accessories/caps" },
+                { name: "New Drops 2026", href: "/shop?filter=new" },
+              ].map((item) => (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => {
+                    router.push(item.href);
+                    onClose();
+                  }}
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-100 dark:border-neutral-800 text-left hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-all group"
+                >
+                  <span className="text-xs font-medium text-neutral-800 dark:text-neutral-200 group-hover:text-neutral-950 dark:group-hover:text-white">
+                    {item.name}
+                  </span>
+                  <CornerDownLeft className="h-3 w-3 text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div className="px-5 py-3 bg-neutral-50 dark:bg-neutral-950/40 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
+          <span>Press <strong>Enter</strong> to search</span>
+          <span>ZEVON Global Store</span>
+        </div>
+      </div>
+    </div>
+  );
+}
