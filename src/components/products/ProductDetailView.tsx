@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Star,
@@ -24,6 +24,12 @@ import {
 } from "lucide-react";
 import type { Product, ProductReview } from "@/features/products";
 import { useWishlist } from "@/context/WishlistContext";
+import {
+  useGetProductReviewsQuery,
+  useCreateReviewMutation,
+} from "@/redux/api/reviewApi";
+import { useAppSelector } from "@/redux/hooks";
+import { selectCurrentUser, selectIsAuthenticated } from "@/redux/features/authSlice";
 import { useTranslation, formatPrice, toBengaliDigits, getCategoryI18nName } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -60,17 +66,78 @@ export function ProductDetailView({
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
 
+  const currentUser = useAppSelector(selectCurrentUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
+  // Live RTK Query for product reviews
+  const { data: serverReviewsData, refetch: refetchReviews } = useGetProductReviewsQuery(
+    { productId: product.id || product.slug },
+    { skip: !product.id && !product.slug }
+  );
+  const [createReviewMutation] = useCreateReviewMutation();
+
+  const [selectedStarFilter, setSelectedStarFilter] = useState<number | null>(null);
+
   // Review Modal state & live reviews
   const [reviewsList, setReviewsList] = useState<ProductReview[]>(
     product.reviews || []
   );
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [newReviewRating, setNewReviewRating] = useState(5);
-  const [newReviewName, setNewReviewName] = useState("");
+  const [newReviewName, setNewReviewName] = useState(currentUser?.name || "");
   const [newReviewComment, setNewReviewComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewSubmittedSuccess, setReviewSubmittedSuccess] = useState(false);
   const [isStockAlertOpen, setIsStockAlertOpen] = useState(false);
+
+  // Sync server reviews into reviewsList when loaded (strictly per-product)
+  useEffect(() => {
+    if (serverReviewsData && Array.isArray(serverReviewsData.reviews)) {
+      setReviewsList(
+        serverReviewsData.reviews.map((r) => ({
+          id: r.id,
+          rating: Number(r.rating) || 5,
+          comment: r.comment,
+          images: r.images || [],
+          isVerifiedPurchase: r.isVerifiedPurchase ?? true,
+          createdAt: r.createdAt,
+          user: r.user || { id: "u", name: "Verified Customer", avatarUrl: null },
+        }))
+      );
+    } else {
+      setReviewsList(product.reviews || []);
+    }
+  }, [serverReviewsData, product.id, product.slug, product.reviews]);
+
+  // Filtered reviews by star selection
+  const displayedReviews = useMemo(() => {
+    if (selectedStarFilter === null) return reviewsList;
+    return reviewsList.filter((r) => r.rating === selectedStarFilter);
+  }, [reviewsList, selectedStarFilter]);
+
+  // Dynamic live average rating and star breakdown
+  const liveAverageRating = useMemo(() => {
+    if (serverReviewsData?.aggregate?.averageRating && serverReviewsData.aggregate.totalReviews > 0) {
+      return Number(serverReviewsData.aggregate.averageRating.toFixed(1));
+    }
+    if (reviewsList.length === 0) return 5.0;
+    const sum = reviewsList.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+    return Number((sum / reviewsList.length).toFixed(1));
+  }, [serverReviewsData, reviewsList]);
+
+  const starBreakdown = useMemo(() => {
+    if (serverReviewsData?.aggregate?.breakdown) {
+      return serverReviewsData.aggregate.breakdown;
+    }
+    const counts: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    for (const r of reviewsList) {
+      const star = Math.round(Number(r.rating)) || 5;
+      if (counts[star] !== undefined) {
+        counts[star] = (counts[star] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [serverReviewsData, reviewsList]);
 
   // Determine current active variant & its exact stock quantity
   const activeVariant = useMemo(() => {
@@ -109,11 +176,16 @@ export function ProductDetailView({
     setTimeout(() => setIsAdded(false), 2000);
   };
 
-  const handleReviewSubmit = (e: React.FormEvent) => {
+  const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReviewComment.trim()) return;
 
     setIsSubmittingReview(true);
+    const authorName =
+      newReviewName.trim() ||
+      currentUser?.name ||
+      (isBn ? "ভেরিফাইড ক্রেতা" : "Verified Customer");
+
     const newRev: ProductReview = {
       id: `rev_${Date.now()}`,
       rating: newReviewRating,
@@ -121,23 +193,34 @@ export function ProductDetailView({
       isVerifiedPurchase: true,
       createdAt: new Date().toISOString(),
       user: {
-        id: `usr_${Date.now()}`,
-        name: newReviewName.trim() || (isBn ? "ভেরিফাইড ক্রেতা" : "Verified Customer"),
-        avatarUrl: null,
+        id: currentUser?.id || `usr_${Date.now()}`,
+        name: authorName,
+        avatarUrl: currentUser?.avatarUrl || null,
       },
     };
 
+    try {
+      if (isAuthenticated) {
+        await createReviewMutation({
+          productId: product.id,
+          rating: newReviewRating,
+          comment: newReviewComment.trim(),
+        }).unwrap();
+        refetchReviews();
+      }
+    } catch {
+      // Keep optimistic local update
+    }
+
+    setReviewsList([newRev, ...reviewsList.filter((r) => r.id !== newRev.id)]);
+    setIsSubmittingReview(false);
+    setReviewSubmittedSuccess(true);
     setTimeout(() => {
-      setReviewsList([newRev, ...reviewsList]);
-      setIsSubmittingReview(false);
-      setReviewSubmittedSuccess(true);
-      setTimeout(() => {
-        setReviewSubmittedSuccess(false);
-        setIsReviewModalOpen(false);
-        setNewReviewComment("");
-        setNewReviewName("");
-      }, 1500);
-    }, 400);
+      setReviewSubmittedSuccess(false);
+      setIsReviewModalOpen(false);
+      setNewReviewComment("");
+      setNewReviewName("");
+    }, 1500);
   };
 
   return (
@@ -251,7 +334,7 @@ export function ProductDetailView({
                 ))}
               </div>
               <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                {product.averageRating || 4.9}
+                {reviewsList.length > 0 ? liveAverageRating : "5.0"}
               </span>
               <a
                 href="#customer-reviews"
@@ -518,15 +601,27 @@ export function ProductDetailView({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 rounded-3xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/80 dark:border-neutral-800 mb-8">
           <div className="md:col-span-4 flex flex-col items-center justify-center text-center p-4 border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-700">
             <span className="text-5xl font-black text-neutral-950 dark:text-white tracking-tighter">
-              {product.averageRating || 4.9}
+              {reviewsList.length > 0 ? liveAverageRating : (isBn ? "নতুন" : "5.0")}
             </span>
             <div className="flex items-center text-amber-500 my-2">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />
+                <Star
+                  key={i}
+                  className={cn(
+                    "h-5 w-5",
+                    i < Math.round(liveAverageRating)
+                      ? "fill-amber-400 text-amber-400"
+                      : "text-neutral-300 dark:text-neutral-700"
+                  )}
+                />
               ))}
             </div>
             <span className="text-xs text-neutral-500 dark:text-neutral-400">
-              {isBn
+              {reviewsList.length === 0
+                ? isBn
+                  ? "এখনো কোনো রিভিউ দেওয়া হয়নি"
+                  : "No reviews yet • Be the first to review"
+                : isBn
                 ? `${toBengaliDigits(reviewsList.length)} টি ভেরিফাইড রিভিউয়ের ওপর ভিত্তি করে`
                 : `Based on ${reviewsList.length} verified customer reviews`}
             </span>
@@ -535,8 +630,11 @@ export function ProductDetailView({
           {/* Star Distribution Progress Bars */}
           <div className="md:col-span-8 flex flex-col justify-center space-y-2 px-2 sm:px-6">
             {[5, 4, 3, 2, 1].map((stars) => {
-              const count = reviewsList.filter((r) => r.rating === stars).length;
-              const percent = reviewsList.length > 0 ? Math.round((count / reviewsList.length) * 100) : (stars === 5 ? 80 : stars === 4 ? 20 : 0);
+              const count = starBreakdown[stars as 1 | 2 | 3 | 4 | 5] || 0;
+              const percent =
+                reviewsList.length > 0
+                  ? Math.round((count / reviewsList.length) * 100)
+                  : 0;
               return (
                 <div key={stars} className="flex items-center gap-3 text-xs font-semibold text-neutral-600 dark:text-neutral-400">
                   <span className="w-12 text-right shrink-0 flex items-center justify-end gap-1">
@@ -558,9 +656,50 @@ export function ProductDetailView({
           </div>
         </div>
 
+        {/* Star Rating Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <button
+            type="button"
+            onClick={() => setSelectedStarFilter(null)}
+            className={cn(
+              "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border",
+              selectedStarFilter === null
+                ? "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 border-neutral-950 dark:border-white shadow-xs"
+                : "bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
+            )}
+          >
+            {isBn ? "সকল রিভিউ" : "All Reviews"} ({reviewsList.length})
+          </button>
+          {[5, 4, 3, 2, 1].map((stars) => {
+            const count = starBreakdown[stars as 1 | 2 | 3 | 4 | 5] || 0;
+            return (
+              <button
+                key={stars}
+                type="button"
+                onClick={() => setSelectedStarFilter(selectedStarFilter === stars ? null : stars)}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all border",
+                  selectedStarFilter === stars
+                    ? "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 border-neutral-950 dark:border-white shadow-xs"
+                    : "bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
+                )}
+              >
+                <span>{isBn ? toBengaliDigits(stars) : stars}</span>
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                <span className="opacity-70">({isBn ? toBengaliDigits(count) : count})</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Reviews List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {reviewsList.map((rev) => (
+        {displayedReviews.length === 0 ? (
+          <div className="text-center py-10 rounded-2xl bg-neutral-50 dark:bg-neutral-800/30 border border-neutral-200 dark:border-neutral-800 text-xs font-medium text-neutral-500">
+            {isBn ? "এই রেটিংয়ে কোনো রিভিউ পাওয়া যায়নি" : "No reviews found for this star rating."}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {displayedReviews.map((rev) => (
             <div
               key={rev.id}
               className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-xs space-y-3"
@@ -612,6 +751,7 @@ export function ProductDetailView({
             </div>
           ))}
         </div>
+        )}
       </section>
 
       {/* ── Write A Review Modal ────────────────────────────── */}

@@ -29,7 +29,7 @@ function normalizeProduct(p: any): Product {
   const reviews = Array.isArray(p.reviews)
     ? p.reviews.map((r: any) => ({
         id: r.id || `rev_${Math.random()}`,
-        rating: r.rating || 5,
+        rating: Number(r.rating) || 5,
         comment: r.comment || "",
         images: r.images || [],
         isVerifiedPurchase: r.isVerifiedPurchase ?? true,
@@ -40,68 +40,19 @@ function normalizeProduct(p: any): Product {
           avatarUrl: r.user?.avatarUrl || null,
         },
       }))
-    : [
-        {
-          id: "rev_default_1",
-          rating: 5,
-          comment:
-            "The fabric weight is unmatched! Definitely a true 380+ GSM. The boxy drape sits perfectly on shoulders. Highly recommended for streetwear lovers in Dhaka.",
-          isVerifiedPurchase: true,
-          createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-          user: {
-            id: "u1",
-            name: "Tanvir Ahmed",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-          },
-        },
-        {
-          id: "rev_default_2",
-          rating: 5,
-          comment:
-            "Best streetwear piece I have bought in Bangladesh. Minimalist cut with zero loose threads and the loopback cotton fleece feels ultra premium.",
-          isVerifiedPurchase: true,
-          createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-          user: {
-            id: "u2",
-            name: "Nafis Fuad",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-          },
-        },
-        {
-          id: "rev_default_3",
-          rating: 5,
-          comment:
-            "Love the fit and the heavy texture! Fast delivery within 24 hours in Dhanmondi. Will order more from the SS/26 drop.",
-          isVerifiedPurchase: true,
-          createdAt: new Date(Date.now() - 86400000 * 9).toISOString(),
-          user: {
-            id: "u3",
-            name: "Sumaiya Rahman",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-          },
-        },
-        {
-          id: "rev_default_4",
-          rating: 4,
-          comment:
-            "Solid construction and great packaging with custom ZEVON dust bag. Fits true to size for an architectural oversized look.",
-          isVerifiedPurchase: true,
-          createdAt: new Date(Date.now() - 86400000 * 14).toISOString(),
-          user: {
-            id: "u4",
-            name: "Abrar Chowdhury",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-          },
-        },
-      ];
+    : [];
 
   const totalStock = Array.isArray(p.variants) && p.variants.length > 0
     ? p.variants.reduce((acc: number, v: any) => acc + (v.stock || 0), 0)
     : p.totalStock ?? 60;
+
+  const averageRating = typeof p.averageRating === "number"
+    ? p.averageRating
+    : reviews.length > 0
+    ? Number((reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviews.length).toFixed(1))
+    : 5.0;
+
+  const reviewCount = p._count?.reviews ?? (Array.isArray(p.reviews) ? p.reviews.length : reviews.length);
 
   return {
     id: p.id || p._id || `prod_${Date.now()}`,
@@ -131,10 +82,16 @@ function normalizeProduct(p: any): Product {
     inStock: totalStock > 0 && (p.inStock ?? true),
     availableSizes: p.availableSizes || (p.variants ? Array.from(new Set(p.variants.map((v: any) => v.size))) : ["S", "M", "L", "XL"]),
     availableColors: p.availableColors || (p.colors ? p.colors : []),
-    reviewCount: p._count?.reviews || p.reviewCount || p.reviewsCount || reviews.length,
-    averageRating: p.averageRating || p.rating || 4.9,
+    reviewCount,
+    averageRating,
     reviews,
-    ratingBreakdown: p.ratingBreakdown || { 5: 3, 4: 1, 3: 0, 2: 0, 1: 0 },
+    ratingBreakdown: p.ratingBreakdown || {
+      5: reviews.filter((r: any) => r.rating === 5).length,
+      4: reviews.filter((r: any) => r.rating === 4).length,
+      3: reviews.filter((r: any) => r.rating === 3).length,
+      2: reviews.filter((r: any) => r.rating === 2).length,
+      1: reviews.filter((r: any) => r.rating === 1).length,
+    },
     createdAt: p.createdAt || new Date().toISOString(),
     updatedAt: p.updatedAt || new Date().toISOString(),
   };

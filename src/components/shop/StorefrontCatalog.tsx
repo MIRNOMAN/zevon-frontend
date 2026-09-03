@@ -21,6 +21,7 @@ import type { Product as HomeProduct } from "@/components/home/homeData";
 import { cn } from "@/lib/utils";
 import { useTranslation, getCategoryI18nName } from "@/lib/i18n";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useWishlist } from "@/context/WishlistContext";
 
 interface SubCategoryFilter {
   name: string;
@@ -51,10 +52,10 @@ function StorefrontCatalogContent({
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>(initialSubCategory || "all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [quickViewProduct, setQuickViewProduct] = useState<HomeProduct | null>(null);
-  const [wishlistMap, setWishlistMap] = useState<Record<string, boolean>>({});
 
   const displaySubtitle = subtitle || description;
 
@@ -70,10 +71,29 @@ function StorefrontCatalogContent({
 
   const products = data?.products || [];
 
-  const toggleWishlist = (id: string, e: React.MouseEvent) => {
+  const handleToggleWishlist = (p: BackendProduct, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setWishlistMap((prev) => ({ ...prev, [id]: !prev[id] }));
+    const primaryImgUrl =
+      typeof p.primaryImage === "object" && p.primaryImage?.url
+        ? p.primaryImage.url
+        : typeof p.images[0] === "object" && p.images[0]?.url
+        ? p.images[0].url
+        : typeof p.images[0] === "string"
+        ? p.images[0]
+        : "";
+
+    toggleWishlist({
+      id: p.id,
+      title: p.title,
+      name: p.title,
+      slug: p.slug,
+      price: p.discountPrice || p.basePrice || 0,
+      basePrice: p.basePrice,
+      discountPrice: p.discountPrice,
+      image: primaryImgUrl,
+      category: p.category,
+    });
   };
 
   // Adapt backend product to QuickViewModal format if needed
@@ -266,7 +286,6 @@ function StorefrontCatalogContent({
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-7">
             {products.map((product) => {
-              const isWishlisted = !!wishlistMap[product.id];
               const primaryImgUrl =
                 typeof product.primaryImage === "object" && product.primaryImage?.url
                   ? product.primaryImage.url
@@ -291,6 +310,8 @@ function StorefrontCatalogContent({
                 typeof product.category === "object"
                   ? product.category?.name
                   : String(product.category || "Streetwear");
+
+              const isWishlisted = isInWishlist(product.id) || (product.slug ? isInWishlist(product.slug) : false);
 
               return (
                 <div
@@ -325,7 +346,7 @@ function StorefrontCatalogContent({
                     {/* Wishlist Heart Button */}
                     <button
                       type="button"
-                      onClick={(e) => toggleWishlist(product.id, e)}
+                      onClick={(e) => handleToggleWishlist(product, e)}
                       aria-label="Add to wishlist"
                       className="absolute top-2.5 right-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md text-neutral-600 dark:text-neutral-300 hover:text-rose-500 shadow-sm transition-all focus:outline-none"
                     >
