@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { siteConfig } from "@/config/site";
 import { StoreProvider } from "@/redux/provider";
 import "./globals.css";
-
-// ---------------------------------------------------------------------------
-// Font
-// ---------------------------------------------------------------------------
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 // ---------------------------------------------------------------------------
 // Global Metadata (title template, OG defaults, Twitter card)
@@ -70,7 +59,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" suppressHydrationWarning className="h-full antialiased">
       <body suppressHydrationWarning className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <StoreProvider>{children}</StoreProvider>
       </body>

@@ -20,19 +20,57 @@ function NavItemsList() {
       return NAV_CATEGORIES;
     }
 
-    const dynamicCategories: NavCategory[] = serverTree.map((cat) => ({
-      id: cat.slug,
-      title: cat.name.replace(/^(Men's|Women's)\s*/i, (m) => (m.toLowerCase().includes("men") ? "Men" : "Women")).replace(/Streetwear|Minimalist\s*Co-ords|Tailored\s*|Architectural\s*/i, "").trim() || cat.name,
-      href: `/shop?category=${cat.slug}`,
-      subCategories:
-        cat.children && cat.children.length > 0
-          ? cat.children.map((sub) => ({
-              title: sub.name,
-              href: `/shop?category=${sub.slug}`,
-              description: sub.description || undefined,
-            }))
-          : undefined,
-    }));
+    const menCat = serverTree.find((c) => c.slug === "men");
+    const womenCat = serverTree.find((c) => c.slug === "women");
+
+    const dynamicCategories: NavCategory[] = [];
+
+    if (menCat) {
+      dynamicCategories.push({
+        id: "men",
+        title: "Men",
+        href: "/men",
+        productCount: menCat._count?.products ?? 0,
+        subCategories: menCat.children?.map((sub) => ({
+          title: sub.name,
+          href: `/shop?category=${sub.slug}`,
+          description: sub.description || undefined,
+          productCount: sub._count?.products ?? 0,
+        })),
+      });
+    }
+
+    if (womenCat) {
+      dynamicCategories.push({
+        id: "women",
+        title: "Women",
+        href: "/women",
+        productCount: womenCat._count?.products ?? 0,
+        subCategories: womenCat.children?.map((sub) => ({
+          title: sub.name,
+          href: `/shop?category=${sub.slug}`,
+          description: sub.description || undefined,
+          productCount: sub._count?.products ?? 0,
+        })),
+      });
+    }
+
+    // Include other root categories like Outerwear/Accessories if present
+    const otherCats = serverTree.filter((c) => c.slug !== "men" && c.slug !== "women");
+    for (const cat of otherCats) {
+      dynamicCategories.push({
+        id: cat.slug,
+        title: cat.name.replace(/^(Tailored|Architectural)\s*/i, "").trim() || cat.name,
+        href: `/shop?category=${cat.slug}`,
+        productCount: cat._count?.products ?? 0,
+        subCategories: cat.children?.map((sub) => ({
+          title: sub.name,
+          href: `/shop?category=${sub.slug}`,
+          description: sub.description || undefined,
+          productCount: sub._count?.products ?? 0,
+        })),
+      });
+    }
 
     return [
       ...dynamicCategories,

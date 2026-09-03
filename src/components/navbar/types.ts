@@ -3,6 +3,7 @@ export interface SubCategory {
   href: string;
   description?: string;
   badge?: string;
+  productCount?: number;
 }
 
 export interface NavCategory {
@@ -12,6 +13,7 @@ export interface NavCategory {
   badge?: string;
   badgeVariant?: "sale" | "new" | "default";
   subCategories?: SubCategory[];
+  productCount?: number;
 }
 
 export interface ProfileMenuItem {

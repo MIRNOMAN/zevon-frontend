@@ -126,6 +126,11 @@ export function NavDropdown({ category }: NavDropdownProps) {
                         >
                           {sub.title}
                         </span>
+                        {sub.productCount !== undefined && sub.productCount > 0 && (
+                          <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.2 rounded-md">
+                            {sub.productCount} {sub.productCount === 1 ? "item" : "items"}
+                          </span>
+                        )}
                         {isSubActive && (
                           <span className="h-1.5 w-1.5 rounded-full bg-neutral-900 dark:bg-neutral-100" />
                         )}
@@ -150,7 +155,10 @@ export function NavDropdown({ category }: NavDropdownProps) {
                 onClick={() => setIsOpen(false)}
                 className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors flex items-center justify-between"
               >
-                <span>View all {category.title} drops</span>
+                <span>
+                  View all {category.title} drops{" "}
+                  {category.productCount ? `(${category.productCount} Items)` : ""}
+                </span>
                 <span className="text-[10px] uppercase font-bold tracking-wider">→</span>
               </Link>
             </div>

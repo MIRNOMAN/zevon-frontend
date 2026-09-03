@@ -9,14 +9,14 @@ import type { Category } from "@/features/categories";
 const DEFAULT_LOOKBOOK_CATEGORIES: Category[] = [
   {
     id: "men",
-    name: "Men's Heavyweight Streetwear",
+    name: "Men's Streetwear",
     slug: "men",
     description: "380 GSM Drop-Shoulder Tees, Cargos & Hoodies",
     imageUrl:
       "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=900&auto=format&fit=crop&q=80",
     sortOrder: 1,
     isActive: true,
-    _count: { products: 24 },
+    _count: { products: 4 },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -29,7 +29,7 @@ const DEFAULT_LOOKBOOK_CATEGORIES: Category[] = [
       "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&auto=format&fit=crop&q=80",
     sortOrder: 2,
     isActive: true,
-    _count: { products: 18 },
+    _count: { products: 4 },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -42,7 +42,7 @@ const DEFAULT_LOOKBOOK_CATEGORIES: Category[] = [
       "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=900&auto=format&fit=crop&q=80",
     sortOrder: 3,
     isActive: true,
-    _count: { products: 12 },
+    _count: { products: 1 },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -55,7 +55,7 @@ const DEFAULT_LOOKBOOK_CATEGORIES: Category[] = [
       "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=900&auto=format&fit=crop&q=80",
     sortOrder: 4,
     isActive: true,
-    _count: { products: 16 },
+    _count: { products: 1 },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -107,7 +107,12 @@ export function CategoryLookbook() {
               FALLBACK_IMAGES[category.slug] ||
               FALLBACK_IMAGES["men"]!;
 
-            const count = category._count?.products ?? 12;
+            const fallbackCount =
+              DEFAULT_LOOKBOOK_CATEGORIES.find((f) => f.slug === category.slug)?._count?.products ?? 0;
+            const count =
+              typeof category._count?.products === "number"
+                ? category._count.products
+                : fallbackCount;
 
             const categoryHref =
               category.slug === "men"
@@ -138,7 +143,7 @@ export function CategoryLookbook() {
                 <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/20 shadow-xs">
-                      {count} Styles
+                      {count} {count === 1 ? "Item" : "Items"}
                     </span>
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-950 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-md">
                       <ArrowUpRight className="h-5 w-5" />
