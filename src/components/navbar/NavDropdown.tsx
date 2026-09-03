@@ -146,10 +146,11 @@ export function NavDropdown({ category }: NavDropdownProps) {
             {/* Bottom Category Quick View */}
             <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800/80 px-3 py-1">
               <Link
-                href={`/shop/${category.id}`}
+                href={category.href || (category.id === "men" ? "/men" : category.id === "women" ? "/women" : `/shop?category=${category.id}`)}
+                onClick={() => setIsOpen(false)}
                 className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors flex items-center justify-between"
               >
-                <span>View all {category.title} collections</span>
+                <span>View all {category.title} drops</span>
                 <span className="text-[10px] uppercase font-bold tracking-wider">→</span>
               </Link>
             </div>

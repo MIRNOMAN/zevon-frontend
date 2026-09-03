@@ -1,20 +1,61 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { NAV_CATEGORIES } from "./navData";
 import { NavDropdown } from "./NavDropdown";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useGetCategoryTreeQuery } from "@/redux/api/categoryApi";
+import type { NavCategory } from "./types";
 
 function NavItemsList() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { data: serverTree } = useGetCategoryTreeQuery();
+
+  const navCategories: NavCategory[] = useMemo(() => {
+    if (!serverTree || serverTree.length === 0) {
+      return NAV_CATEGORIES;
+    }
+
+    const dynamicCategories: NavCategory[] = serverTree.map((cat) => ({
+      id: cat.slug,
+      title: cat.name.replace(/^(Men's|Women's)\s*/i, (m) => (m.toLowerCase().includes("men") ? "Men" : "Women")).replace(/Streetwear|Minimalist\s*Co-ords|Tailored\s*|Architectural\s*/i, "").trim() || cat.name,
+      href: `/shop?category=${cat.slug}`,
+      subCategories:
+        cat.children && cat.children.length > 0
+          ? cat.children.map((sub) => ({
+              title: sub.name,
+              href: `/shop?category=${sub.slug}`,
+              description: sub.description || undefined,
+            }))
+          : undefined,
+    }));
+
+    return [
+      ...dynamicCategories,
+      {
+        id: "new-drops",
+        title: "New Drops",
+        href: "/shop?filter=new",
+        badge: "SS/26",
+        badgeVariant: "new",
+      },
+      {
+        id: "sale",
+        title: "Sale",
+        href: "/sale",
+        badge: "Hot",
+        badgeVariant: "sale",
+      },
+    ];
+  }, [serverTree]);
 
   return (
     <div className="flex items-center gap-1 xl:gap-2">
-      {NAV_CATEGORIES.map((category) => {
+      {navCategories.map((category) => {
         // Dropdown Items (Men, Women, Accessories)
         if (category.subCategories && category.subCategories.length > 0) {
           return <NavDropdown key={category.id} category={category} />;

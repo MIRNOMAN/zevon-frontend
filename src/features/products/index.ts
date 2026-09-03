@@ -10,6 +10,7 @@
 export type {
   Product,
   ProductListResponse,
+  ProductQueryFilters,
   CreateProductInput,
   UpdateProductInput,
 } from "./types/product.types";

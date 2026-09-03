@@ -13,24 +13,30 @@ const MOCK_PRODUCTS: Product[] = [
   {
     id: "prod_01",
     name: "Enterprise Platform",
+    title: "Enterprise Platform",
     slug: "sample-product",
     description:
       "A comprehensive enterprise platform that streamlines your team's workflow with intelligent automation, real-time collaboration, and advanced analytics. Built for scale with multi-tenant architecture and SOC 2 compliance.",
     price: 9999,
+    basePrice: 9999,
     category: "Platform",
     image: "https://acme.example.com/og-default.png",
+    images: ["https://acme.example.com/og-default.png"],
     createdAt: "2024-01-15T08:00:00.000Z",
     updatedAt: "2024-06-20T12:30:00.000Z",
   },
   {
     id: "prod_02",
     name: "Analytics Suite",
+    title: "Analytics Suite",
     slug: "analytics-suite",
     description:
       "Real-time analytics and reporting tools for data-driven decisions. Features customizable dashboards, predictive modeling, and automated insights delivery.",
     price: 4999,
+    basePrice: 4999,
     category: "Analytics",
     image: "https://acme.example.com/og-default.png",
+    images: ["https://acme.example.com/og-default.png"],
     createdAt: "2024-03-01T10:00:00.000Z",
     updatedAt: "2024-07-15T09:00:00.000Z",
   },
@@ -54,10 +60,17 @@ export async function getProducts(): Promise<ProductListResponse> {
   await new Promise((resolve) => setTimeout(resolve, 100));
 
   return {
+    products: MOCK_PRODUCTS,
     data: MOCK_PRODUCTS,
     total: MOCK_PRODUCTS.length,
     page: 1,
     pageSize: 10,
+    meta: {
+      total: MOCK_PRODUCTS.length,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+    },
   };
 }
 
@@ -95,7 +108,9 @@ export async function createProduct(
   return {
     id: `prod_${Date.now()}`,
     image: "https://acme.example.com/og-default.png",
+    images: ["https://acme.example.com/og-default.png"],
     ...input,
+    slug: input.slug || input.title.toLowerCase().replace(/\s+/g, "-"),
     createdAt: now,
     updatedAt: now,
   };

@@ -18,7 +18,8 @@ import { ProductCard } from "./product-card";
  * ```
  */
 export async function ProductList() {
-  const { data: products } = await getProducts();
+  const res = await getProducts();
+  const products = res.products || res.data || [];
 
   if (products.length === 0) {
     return (

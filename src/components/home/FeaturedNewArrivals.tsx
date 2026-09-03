@@ -8,8 +8,9 @@ import { QuickViewModal } from "./QuickViewModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useGetCategoriesQuery } from "@/redux/api/categoryApi";
 
-const TABS = [
+const DEFAULT_TABS = [
   { id: "all", label: "All Drops" },
   { id: "men", label: "Men's Streetwear" },
   { id: "women", label: "Women's Essentials" },
@@ -18,6 +19,23 @@ const TABS = [
 ];
 
 export function FeaturedNewArrivals() {
+  const { data: serverCategories } = useGetCategoriesQuery({ onlyRoot: true });
+
+  const dynamicTabs = React.useMemo(() => {
+    if (!serverCategories || serverCategories.length === 0) {
+      return DEFAULT_TABS;
+    }
+    const catTabs = serverCategories.map((c) => ({
+      id: c.slug,
+      label: c.name,
+    }));
+    return [
+      { id: "all", label: "All Drops" },
+      ...catTabs,
+      { id: "sale", label: "Sale Edition" },
+    ];
+  }, [serverCategories]);
+
   const [activeTab, setActiveTab] = useState("all");
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [wishlistMap, setWishlistMap] = useState<Record<string, boolean>>({});
@@ -51,7 +69,7 @@ export function FeaturedNewArrivals() {
 
           {/* Category Tabs */}
           <div className="mt-4 md:mt-0 flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
-            {TABS.map((tab) => {
+            {dynamicTabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button

@@ -26,12 +26,12 @@ import type { Product } from "../types/product.types";
  * const { data } = await getProducts();
  * ```
  */
-export function useProducts() {
-  const { data, isLoading, error, refetch } = useGetProductsQuery();
+export function useProducts(filters?: Parameters<typeof useGetProductsQuery>[0]) {
+  const { data, isLoading, error, refetch } = useGetProductsQuery(filters);
 
   return {
-    products: data?.data ?? [],
-    total: data?.total ?? 0,
+    products: data?.products ?? data?.data ?? [],
+    total: data?.meta?.total ?? data?.total ?? 0,
     isLoading,
     error: error ? "Failed to fetch products" : null,
     refresh: refetch,

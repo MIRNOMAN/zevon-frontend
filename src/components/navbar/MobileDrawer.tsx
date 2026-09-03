@@ -26,7 +26,9 @@ import {
   logout,
 } from "@/redux/features/authSlice";
 import { useLogoutMutation } from "@/redux/api/authApi";
+import { useGetCategoryTreeQuery } from "@/redux/api/categoryApi";
 import { cn } from "@/lib/utils";
+import type { NavCategory } from "./types";
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -39,6 +41,46 @@ export function MobileDrawer({
   onClose,
   wishlistCount = 2,
 }: MobileDrawerProps) {
+  const { data: serverTree } = useGetCategoryTreeQuery();
+
+  const navCategories: NavCategory[] = React.useMemo(() => {
+    if (!serverTree || serverTree.length === 0) {
+      return NAV_CATEGORIES;
+    }
+
+    const dynamicCategories: NavCategory[] = serverTree.map((cat) => ({
+      id: cat.slug,
+      title: cat.name.replace(/^(Men's|Women's)\s*/i, (m) => (m.toLowerCase().includes("men") ? "Men" : "Women")).replace(/Streetwear|Minimalist\s*Co-ords|Tailored\s*|Architectural\s*/i, "").trim() || cat.name,
+      href: `/shop?category=${cat.slug}`,
+      subCategories:
+        cat.children && cat.children.length > 0
+          ? cat.children.map((sub) => ({
+              title: sub.name,
+              href: `/shop?category=${sub.slug}`,
+              description: sub.description || undefined,
+            }))
+          : undefined,
+    }));
+
+    return [
+      ...dynamicCategories,
+      {
+        id: "new-drops",
+        title: "New Drops",
+        href: "/shop?filter=new",
+        badge: "SS/26",
+        badgeVariant: "new",
+      },
+      {
+        id: "sale",
+        title: "Sale",
+        href: "/sale",
+        badge: "Hot",
+        badgeVariant: "sale",
+      },
+    ];
+  }, [serverTree]);
+
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     men: true,
   });
@@ -119,7 +161,7 @@ export function MobileDrawer({
 
           {/* Navigation Accordion List */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-            {NAV_CATEGORIES.map((category) => {
+            {navCategories.map((category) => {
               const hasSubcategories =
                 category.subCategories && category.subCategories.length > 0;
               const isExpanded = !!expandedCategories[category.id];
