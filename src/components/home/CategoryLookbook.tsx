@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 import { useGetCategoriesQuery } from "@/redux/api/categoryApi";
+import { useTranslation, getCategoryI18nName, getCategoryI18nDesc } from "@/lib/i18n";
 import type { Category } from "@/features/categories";
 
 const DEFAULT_LOOKBOOK_CATEGORIES: Category[] = [
@@ -69,6 +70,7 @@ const FALLBACK_IMAGES: Record<string, string> = {
 };
 
 export function CategoryLookbook() {
+  const { t } = useTranslation();
   const { data: serverCategories, isLoading } = useGetCategoriesQuery({
     onlyRoot: true,
   });
@@ -86,14 +88,14 @@ export function CategoryLookbook() {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-2">
               <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              <span>Curated Collections</span>
+              <span>{t("home.lookbookBadge", "Curated Collections")}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-neutral-950 dark:text-white">
-              EXPLORE BY CATEGORY
+              {t("home.lookbookTitle", "EXPLORE BY CATEGORY")}
             </h2>
           </div>
           <p className="mt-2 sm:mt-0 text-sm text-neutral-500 dark:text-neutral-400 max-w-sm">
-            Discover tailored drops, oversized essentials, and curated streetwear aesthetic.
+            {t("home.lookbookSubtitle", "Discover tailored drops, oversized essentials, and curated streetwear aesthetic.")}
           </p>
         </div>
 
@@ -121,6 +123,9 @@ export function CategoryLookbook() {
                 ? "/women"
                 : `/shop?category=${category.slug}`;
 
+            const displayName = getCategoryI18nName(category.slug, category.name, t);
+            const displayDesc = getCategoryI18nDesc(category.slug, category.description || undefined, t);
+
             return (
               <Link
                 key={category.id}
@@ -133,7 +138,7 @@ export function CategoryLookbook() {
               >
                 <img
                   src={imageUrl}
-                  alt={category.name}
+                  alt={displayName}
                   className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                 />
@@ -143,7 +148,7 @@ export function CategoryLookbook() {
                 <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/20 shadow-xs">
-                      {count} {count === 1 ? "Item" : "Items"}
+                      {count} {count === 1 ? t("nav.item", "Item") : t("nav.items", "Items")}
                     </span>
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-950 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-md">
                       <ArrowUpRight className="h-5 w-5" />
@@ -152,11 +157,11 @@ export function CategoryLookbook() {
 
                   <div className="space-y-1.5 text-white">
                     <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                      {category.name}
+                      {displayName}
                     </h3>
-                    {category.description && (
+                    {displayDesc && (
                       <p className="text-xs sm:text-sm text-neutral-300 line-clamp-1 font-medium">
-                        {category.description}
+                        {displayDesc}
                       </p>
                     )}
                   </div>

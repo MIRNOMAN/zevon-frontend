@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, TrendingUp, ArrowRight, CornerDownLeft } from "lucide-react";
-import { SEARCH_TRENDING_TAGS } from "./navData";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface SearchModalProps {
@@ -12,6 +12,7 @@ interface SearchModalProps {
 }
 
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
+  const { t, isBn } = useTranslation();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -57,6 +58,19 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     onClose();
   };
 
+  const trendingTags = isBn
+    ? ["হেভিওয়েট টি-শার্ট", "কার্গো প্যান্ট", "ওভারসাইজড হুডি", "ড্রপ শোল্ডার", "ক্যাপ ও টুপি", "উইমেন কো-অর্ড"]
+    : ["Heavyweight Tee", "Cargo Pants", "Oversized Hoodie", "Drop Shoulder", "Caps & Beanies", "Women's Co-ords"];
+
+  const popularCategories = [
+    { name: t("categories.menTshirts", "Graphic T-Shirts"), href: "/shop?category=men-t-shirts" },
+    { name: t("categories.menHoodies", "Heavyweight Hoodies"), href: "/shop?category=men-hoodies" },
+    { name: t("categories.menPants", "Utility Cargo Pants"), href: "/shop?category=men-pants" },
+    { name: t("categories.womenCoords", "Women's Co-ords"), href: "/shop?category=women-coords" },
+    { name: t("categories.accessoriesCaps", "Caps & Headwear"), href: "/shop?category=caps-headwear" },
+    { name: isBn ? "নতুন ড্রপস ২০২৬" : "New Drops 2026", href: "/shop?filter=new" },
+  ];
+
   return (
     <div
       className={cn(
@@ -95,7 +109,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             suppressHydrationWarning
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search collections, apparel, accessories..."
+            placeholder={t("search.placeholder", "Search collections, apparel, accessories...")}
             style={{ outline: "none", border: "none", boxShadow: "none" }}
             className="w-full bg-transparent px-3.5 py-1 text-base sm:text-lg font-medium text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 border-none outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 shadow-none"
           />
@@ -123,10 +137,10 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-3">
               <TrendingUp className="h-3.5 w-3.5" />
-              <span>Trending Searches</span>
+              <span>{t("search.trending", "Trending Searches")}</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {SEARCH_TRENDING_TAGS.map((tag) => (
+              {trendingTags.map((tag) => (
                 <button
                   key={tag}
                   type="button"
@@ -143,17 +157,10 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           {/* Quick Categories */}
           <div className="border-t border-neutral-100 dark:border-neutral-800/80 pt-4">
             <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-2.5">
-              Popular Categories
+              {isBn ? "জনপ্রিয় ক্যাটাগরি" : "Popular Categories"}
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {[
-                { name: "Graphic T-Shirts", href: "/shop/men/t-shirts" },
-                { name: "Heavyweight Hoodies", href: "/shop/men/outerwear" },
-                { name: "Utility Cargo Pants", href: "/shop/men/pants" },
-                { name: "Women's Co-ords", href: "/shop/women/dresses" },
-                { name: "Caps & Beanies", href: "/shop/accessories/caps" },
-                { name: "New Drops 2026", href: "/shop?filter=new" },
-              ].map((item) => (
+              {popularCategories.map((item) => (
                 <button
                   key={item.name}
                   type="button"
@@ -175,8 +182,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
         {/* Footer info */}
         <div className="px-5 py-3 bg-neutral-50 dark:bg-neutral-950/40 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
-          <span>Press <strong>Enter</strong> to search</span>
-          <span>ZEVON Global Store</span>
+          <span>{isBn ? "অনুসন্ধান করতে Enter চাপুন" : "Press Enter to search"}</span>
+          <span>ZEVON BD</span>
         </div>
       </div>
     </div>

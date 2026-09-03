@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ArrowRight, Sparkles } from "lucide-react";
 import { NavCategory } from "./types";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface NavDropdownProps {
@@ -15,6 +16,7 @@ export function NavDropdown({ category }: NavDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   // Check if any subcategory is currently active
   const isCategoryActive = category.subCategories?.some((sub) =>
@@ -90,11 +92,11 @@ export function NavDropdown({ category }: NavDropdownProps) {
             {/* Top Subtitle Bar */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-100 dark:border-neutral-800/80 mb-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                Explore {category.title}
+                {t("nav.exploreCategory", "Explore")} {category.title}
               </span>
               <span className="flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
                 <Sparkles className="h-3 w-3" />
-                Premium Quality
+                {t("nav.premiumQuality", "Premium Quality")}
               </span>
             </div>
 
@@ -128,7 +130,7 @@ export function NavDropdown({ category }: NavDropdownProps) {
                         </span>
                         {sub.productCount !== undefined && sub.productCount > 0 && (
                           <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.2 rounded-md">
-                            {sub.productCount} {sub.productCount === 1 ? "item" : "items"}
+                            {sub.productCount} {sub.productCount === 1 ? t("nav.item", "item") : t("nav.items", "items")}
                           </span>
                         )}
                         {isSubActive && (
@@ -156,8 +158,8 @@ export function NavDropdown({ category }: NavDropdownProps) {
                 className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors flex items-center justify-between"
               >
                 <span>
-                  View all {category.title} drops{" "}
-                  {category.productCount ? `(${category.productCount} Items)` : ""}
+                  {t("nav.viewAllDrops", "View all")} {category.title} {t("nav.drops", "drops")}{" "}
+                  {category.productCount ? `(${category.productCount} ${category.productCount === 1 ? t("nav.item", "Item") : t("nav.items", "Items")})` : ""}
                 </span>
                 <span className="text-[10px] uppercase font-bold tracking-wider">→</span>
               </Link>

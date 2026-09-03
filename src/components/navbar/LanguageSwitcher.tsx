@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Globe, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type LanguageCode = "en" | "bn";
+import { useTranslation, LanguageCode } from "@/lib/i18n";
 
 interface LanguageOption {
   code: LanguageCode;
@@ -30,7 +30,7 @@ export function LanguageSwitcher({
   dropDirection = "down",
   className,
 }: LanguageSwitcherProps) {
-  const [selectedLang, setSelectedLang] = useState<LanguageCode>("en");
+  const { language, setLanguage } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -51,12 +51,12 @@ export function LanguageSwitcher({
   }, [variant]);
 
   const handleSelect = (code: LanguageCode) => {
-    setSelectedLang(code);
+    setLanguage(code);
     setIsOpen(false);
   };
 
   const currentOption: LanguageOption =
-    LANGUAGES.find((l) => l.code === selectedLang) ?? {
+    LANGUAGES.find((l) => l.code === language) ?? {
       code: "en",
       label: "English",
       nativeLabel: "EN",
@@ -72,12 +72,12 @@ export function LanguageSwitcher({
         )}
       >
         {LANGUAGES.map((lang) => {
-          const isSelected = selectedLang === lang.code;
+          const isSelected = language === lang.code;
           return (
             <button
               key={lang.code}
               type="button"
-              onClick={() => setSelectedLang(lang.code)}
+              onClick={() => setLanguage(lang.code)}
               className={cn(
                 "px-2.5 py-1 text-xs font-bold rounded-md transition-all duration-150 focus-visible:outline-none",
                 isSelected
@@ -127,7 +127,7 @@ export function LanguageSwitcher({
             Select Language
           </div>
           {LANGUAGES.map((lang) => {
-            const isSelected = selectedLang === lang.code;
+            const isSelected = language === lang.code;
             return (
               <button
                 key={lang.code}

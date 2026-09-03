@@ -4,8 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { ZevonLogo } from "@/components/navbar/Logo";
 import { ShieldCheck } from "lucide-react";
+import { useTranslation, toBengaliDigits } from "@/lib/i18n";
 
 export function Footer() {
+  const { t, isBn } = useTranslation();
+
   return (
     <footer className="border-t border-neutral-200/80 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
       {/* Upper Grid Section */}
@@ -15,7 +18,7 @@ export function Footer() {
           <div className="col-span-2 md:col-span-4 space-y-4">
             <ZevonLogo className="h-9 w-auto" />
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 max-w-sm leading-relaxed">
-              Pioneering high-end streetwear and architectural essentials in Bangladesh. Engineered with 380+ GSM organic cotton.
+              {t("footer.brandDesc", "Pioneering high-end streetwear and architectural essentials in Bangladesh. Engineered with 380+ GSM organic cotton.")}
             </p>
             {/* Social Links (Inline Clean SVG Icons) */}
             <div className="flex items-center gap-3 pt-2">
@@ -58,27 +61,27 @@ export function Footer() {
           {/* Men Column (col-span-1 md:col-span-2) */}
           <div className="col-span-1 md:col-span-2 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-              Men
+              {t("nav.men", "Men")}
             </h4>
             <ul className="space-y-2 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
               <li>
-                <Link href="/shop/men/t-shirts" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  T-Shirts &amp; Polos
+                <Link href="/shop?category=men-t-shirts" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {t("categories.menTshirts", "T-Shirts & Tops")}
                 </Link>
               </li>
               <li>
-                <Link href="/shop/men/shirts" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Shirts &amp; Flannels
+                <Link href="/shop?category=men-hoodies" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {t("categories.menHoodies", "Hoodies & Sweatshirts")}
                 </Link>
               </li>
               <li>
-                <Link href="/shop/men/pants" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Cargo Pants &amp; Chinos
+                <Link href="/shop?category=men-pants" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {t("categories.menPants", "Pants & Cargos")}
                 </Link>
               </li>
               <li>
-                <Link href="/shop/men/outerwear" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Hoodies &amp; Jackets
+                <Link href="/shop?category=men-coords" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {t("categories.menCoords", "Co-ords & Sets")}
                 </Link>
               </li>
             </ul>
@@ -87,27 +90,27 @@ export function Footer() {
           {/* Women Column (col-span-1 md:col-span-2) */}
           <div className="col-span-1 md:col-span-2 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-              Women
+              {t("nav.women", "Women")}
             </h4>
             <ul className="space-y-2 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
               <li>
-                <Link href="/shop/women/tops" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Tops &amp; Cropped Tees
+                <Link href="/shop?category=women-coords" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {t("categories.womenCoords", "Co-ords & Sets")}
                 </Link>
               </li>
               <li>
-                <Link href="/shop/women/dresses" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Dresses &amp; Co-ords
+                <Link href="/shop?category=women-dresses" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {t("categories.womenDresses", "Dresses & Jumpsuits")}
                 </Link>
               </li>
               <li>
-                <Link href="/shop/women/bottoms" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Wide-Leg Trousers
+                <Link href="/shop?category=women-tops" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {t("categories.womenTops", "Tops & Baby Tees")}
                 </Link>
               </li>
               <li>
-                <Link href="/shop/accessories/caps" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Caps &amp; Accessories
+                <Link href="/shop?category=women-trousers" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {t("categories.womenTrousers", "Trousers & Skirts")}
                 </Link>
               </li>
             </ul>
@@ -116,27 +119,27 @@ export function Footer() {
           {/* Customer Care (col-span-1 md:col-span-2) */}
           <div className="col-span-1 md:col-span-2 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-              Help &amp; Support
+              {isBn ? "সহায়তা ও সেবা" : "Help & Support"}
             </h4>
             <ul className="space-y-2 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
               <li>
                 <Link href="/account/orders" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Track Your Order
+                  {isBn ? "অর্ডার ট্র্যাক করুন" : "Track Your Order"}
                 </Link>
               </li>
               <li>
                 <Link href="/shipping" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Shipping &amp; Delivery
+                  {isBn ? "ডেলিভারি তথ্য" : "Shipping & Delivery"}
                 </Link>
               </li>
               <li>
                 <Link href="/returns" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  7-Day Returns Policy
+                  {isBn ? "৭ দিনের রিটার্ন নীতি" : "7-Day Returns Policy"}
                 </Link>
               </li>
               <li>
                 <Link href="/size-guide" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Size Guide &amp; GSM
+                  {isBn ? "সাইজ গাইড ও জিএসএম" : "Size Guide & GSM"}
                 </Link>
               </li>
             </ul>
@@ -145,27 +148,27 @@ export function Footer() {
           {/* Company & Stores (col-span-1 md:col-span-2) */}
           <div className="col-span-1 md:col-span-2 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
-              Company
+              {isBn ? "কোম্পানি" : "Company"}
             </h4>
             <ul className="space-y-2 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
               <li>
                 <Link href="/about" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Brand Story
+                  {isBn ? "আমাদের গল্প" : "Brand Story"}
                 </Link>
               </li>
               <li>
                 <Link href="/sustainability" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Sustainable Sourcing
+                  {isBn ? "পরিবেশবান্ধব উপাদান" : "Sustainable Sourcing"}
                 </Link>
               </li>
               <li>
                 <Link href="/stores" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Flagship Store (Dhaka)
+                  {isBn ? "ফ্ল্যাগশিপ আউটলেট (ঢাকা)" : "Flagship Store (Dhaka)"}
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                  Contact Atelier
+                  {isBn ? "যোগাযোগ" : "Contact Atelier"}
                 </Link>
               </li>
             </ul>
@@ -176,7 +179,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
             <ShieldCheck className="h-4 w-4 text-emerald-500" />
-            <span>100% Encrypted &amp; Secure Checkout</span>
+            <span>{isBn ? "১০০% নিরাপদ ও সুরক্ষিত চেকআউট" : "100% Encrypted & Secure Checkout"}</span>
           </div>
 
           {/* Payment Methods Badges */}
@@ -194,7 +197,7 @@ export function Footer() {
               Mastercard
             </span>
             <span className="px-2.5 py-1 rounded-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300">
-              Cash on Delivery
+              {isBn ? "ক্যাশ অন ডেলিভারি" : "Cash on Delivery"}
             </span>
           </div>
         </div>
@@ -202,14 +205,14 @@ export function Footer() {
         {/* Bottom Sub-Footer */}
         <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400 dark:text-neutral-500">
           <p>
-            &copy; {new Date().getFullYear()} ZEVON BD Apparel &amp; Lifestyle. All rights reserved.
+            &copy; {isBn ? toBengaliDigits(new Date().getFullYear()) : new Date().getFullYear()} ZEVON BD Apparel &amp; Lifestyle. {t("footer.copyright", "All rights reserved. Designed & Engineered in Bangladesh.")}
           </p>
           <div className="flex gap-4">
             <Link href="/privacy" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-              Privacy Policy
+              {isBn ? "গোপনীয়তা নীতি" : "Privacy Policy"}
             </Link>
             <Link href="/terms" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-              Terms of Service
+              {isBn ? "শর্তাবলী" : "Terms of Service"}
             </Link>
           </div>
         </div>

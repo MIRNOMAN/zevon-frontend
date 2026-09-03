@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Heart, ShoppingBag, ArrowRight, Camera } from "lucide-react";
 import { UGC_POSTS } from "./homeData";
+import { useTranslation, formatPrice, toBengaliDigits } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const UGC_IMAGES: Record<string, string> = {
@@ -18,6 +19,7 @@ const UGC_IMAGES: Record<string, string> = {
 };
 
 export function ShoppableUGC() {
+  const { t, language, isBn } = useTranslation();
   const [activePin, setActivePin] = useState<string | null>(null);
 
   return (
@@ -28,10 +30,10 @@ export function ShoppableUGC() {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-2">
               <Camera className="h-3.5 w-3.5 text-rose-500" />
-              <span>Community &amp; Street Style</span>
+              <span>{isBn ? "কমিউনিটি ও স্ট্রিট স্টাইল" : "Community & Street Style"}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-neutral-950 dark:text-white">
-              TAGGED BY YOU #ZEVON_BD
+              {isBn ? "কমিউনিটি আর্কাইভ #ZEVON_BD" : "TAGGED BY YOU #ZEVON_BD"}
             </h2>
           </div>
 
@@ -41,7 +43,7 @@ export function ShoppableUGC() {
             rel="noopener noreferrer"
             className="mt-3 sm:mt-0 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white hover:opacity-80 transition-opacity"
           >
-            <span>Follow @ZEVON_BD on Instagram</span>
+            <span>{isBn ? "ইনস্টাগ্রামে ফলো করুন @ZEVON_BD" : "Follow @ZEVON_BD on Instagram"}</span>
             <ArrowRight className="h-4 w-4" />
           </a>
         </div>
@@ -92,20 +94,20 @@ export function ShoppableUGC() {
                       )}
                     >
                       <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-0.5">
-                        Shop this look
+                        {t("ugc.shopTheLook", "Shop this look")}
                       </span>
                       <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">
                         {post.taggedProduct.name}
                       </p>
                       <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-neutral-100 dark:border-neutral-800">
                         <span className="text-xs font-extrabold text-neutral-950 dark:text-white">
-                          ৳{post.taggedProduct.price.toLocaleString()}
+                          {formatPrice(post.taggedProduct.price, language as "en" | "bn")}
                         </span>
                         <Link
                           href={post.taggedProduct.href}
                           className="text-[10px] font-bold uppercase tracking-wider bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 px-2 py-0.5 rounded-md hover:opacity-90"
                         >
-                          View
+                          {t("ugc.viewProduct", "View")}
                         </Link>
                       </div>
                     </div>

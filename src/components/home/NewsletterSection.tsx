@@ -3,8 +3,10 @@
 import React, { useState } from "react";
 import { Mail, CheckCircle2, ArrowRight, Sparkles, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 
 export function NewsletterSection() {
+  const { t, isBn } = useTranslation();
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -35,25 +37,25 @@ export function NewsletterSection() {
           <div className="relative z-10 max-w-2xl mx-auto space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-neutral-300 border border-white/10">
               <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-              <span>ZEVON INSIDERS CLUB</span>
+              <span>{t("newsletter.tag", "ZEVON INSIDERS CLUB")}</span>
             </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-              GET 10% OFF YOUR FIRST ORDER
+              {t("newsletter.title", "GET 10% OFF YOUR FIRST ORDER")}
             </h2>
 
             <p className="text-sm sm:text-base text-neutral-400 font-normal leading-relaxed">
-              Subscribe to unlock private archive drops, early seasonal sales, and secret discount codes delivered straight to your inbox.
+              {t("newsletter.desc", "Subscribe to unlock private archive drops, early seasonal sales, and secret discount codes delivered straight to your inbox.")}
             </p>
 
             {isSubscribed ? (
               <div className="p-6 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md space-y-3 animate-in fade-in zoom-in-95 duration-300">
                 <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-base">
                   <CheckCircle2 className="h-5 w-5" />
-                  <span>Welcome to the ZEVON Club!</span>
+                  <span>{isBn ? "জেভন ক্লাবে স্বাগতম!" : "Welcome to the ZEVON Club!"}</span>
                 </div>
                 <p className="text-xs text-neutral-300">
-                  Use your exclusive 10% promo code at checkout:
+                  {isBn ? "চেকআউটে আপনার ১০% ডিসকাউন্ট কোড ব্যবহার করুন:" : "Use your exclusive 10% promo code at checkout:"}
                 </p>
                 <div className="inline-flex items-center gap-3 bg-black/60 px-4 py-2 rounded-xl border border-white/20">
                   <span className="font-mono text-base font-black text-amber-400 tracking-wider">
@@ -65,7 +67,7 @@ export function NewsletterSection() {
                     className="flex items-center gap-1 text-xs font-bold bg-white text-neutral-950 px-2.5 py-1 rounded-lg hover:opacity-90 transition-opacity"
                   >
                     {isCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                    {isCopied ? "Copied" : "Copy"}
+                    {isCopied ? (isBn ? "কপি হয়েছে" : "Copied") : (isBn ? "কপি করুন" : "Copy")}
                   </button>
                 </div>
               </div>
@@ -82,7 +84,7 @@ export function NewsletterSection() {
                     suppressHydrationWarning
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address..."
+                    placeholder={t("newsletter.placeholder", "Enter your email address...")}
                     style={{ outline: "none", boxShadow: "none" }}
                     className="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-3 pl-11 text-sm text-white placeholder:text-neutral-400 focus:border-white focus:outline-none transition-colors"
                   />
@@ -92,14 +94,14 @@ export function NewsletterSection() {
                   size="lg"
                   className="bg-white text-neutral-950 hover:bg-neutral-200 font-bold tracking-wide shrink-0 gap-2"
                 >
-                  Join Club
+                  {t("newsletter.button", "Join Club")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </form>
             )}
 
             <p className="text-[11px] text-neutral-500">
-              No spam, ever. Unsubscribe anytime with 1-click.
+              {t("newsletter.privacyNote", "No spam, ever. Unsubscribe anytime with 1-click.")}
             </p>
           </div>
         </div>

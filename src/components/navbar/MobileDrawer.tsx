@@ -27,6 +27,7 @@ import {
 } from "@/redux/features/authSlice";
 import { useLogoutMutation } from "@/redux/api/authApi";
 import { useGetCategoryTreeQuery } from "@/redux/api/categoryApi";
+import { useTranslation, getCategoryI18nName, getCategoryI18nDesc } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { NavCategory } from "./types";
 
@@ -41,11 +42,19 @@ export function MobileDrawer({
   onClose,
   wishlistCount = 2,
 }: MobileDrawerProps) {
+  const { t } = useTranslation();
   const { data: serverTree } = useGetCategoryTreeQuery();
 
   const navCategories: NavCategory[] = React.useMemo(() => {
     if (!serverTree || serverTree.length === 0) {
-      return NAV_CATEGORIES;
+      return NAV_CATEGORIES.map((cat) => ({
+        ...cat,
+        title: getCategoryI18nName(cat.id, cat.title, t),
+        subCategories: cat.subCategories?.map((sub) => ({
+          ...sub,
+          title: t(`categories.${sub.title.toLowerCase().replace(/[^a-z]/g, "")}`, sub.title),
+        })),
+      }));
     }
 
     const menCat = serverTree.find((c) => c.slug === "men");
@@ -56,13 +65,13 @@ export function MobileDrawer({
     if (menCat) {
       dynamicCategories.push({
         id: "men",
-        title: "Men",
+        title: t("nav.men", "Men"),
         href: "/men",
         productCount: menCat._count?.products ?? 0,
         subCategories: menCat.children?.map((sub) => ({
-          title: sub.name,
+          title: getCategoryI18nName(sub.slug, sub.name, t),
           href: `/shop?category=${sub.slug}`,
-          description: sub.description || undefined,
+          description: getCategoryI18nDesc(sub.slug, sub.description || undefined, t),
           productCount: sub._count?.products ?? 0,
         })),
       });
@@ -71,13 +80,13 @@ export function MobileDrawer({
     if (womenCat) {
       dynamicCategories.push({
         id: "women",
-        title: "Women",
+        title: t("nav.women", "Women"),
         href: "/women",
         productCount: womenCat._count?.products ?? 0,
         subCategories: womenCat.children?.map((sub) => ({
-          title: sub.name,
+          title: getCategoryI18nName(sub.slug, sub.name, t),
           href: `/shop?category=${sub.slug}`,
-          description: sub.description || undefined,
+          description: getCategoryI18nDesc(sub.slug, sub.description || undefined, t),
           productCount: sub._count?.products ?? 0,
         })),
       });
@@ -88,13 +97,13 @@ export function MobileDrawer({
     for (const cat of otherCats) {
       dynamicCategories.push({
         id: cat.slug,
-        title: cat.name.replace(/^(Tailored|Architectural)\s*/i, "").trim() || cat.name,
+        title: getCategoryI18nName(cat.slug, cat.name, t),
         href: `/shop?category=${cat.slug}`,
         productCount: cat._count?.products ?? 0,
         subCategories: cat.children?.map((sub) => ({
-          title: sub.name,
+          title: getCategoryI18nName(sub.slug, sub.name, t),
           href: `/shop?category=${sub.slug}`,
-          description: sub.description || undefined,
+          description: getCategoryI18nDesc(sub.slug, sub.description || undefined, t),
           productCount: sub._count?.products ?? 0,
         })),
       });
@@ -104,20 +113,20 @@ export function MobileDrawer({
       ...dynamicCategories,
       {
         id: "new-drops",
-        title: "New Drops",
+        title: t("nav.newDrops", "New Drops"),
         href: "/shop?filter=new",
         badge: "SS/26",
         badgeVariant: "new",
       },
       {
         id: "sale",
-        title: "Sale",
+        title: t("nav.sale", "Sale"),
         href: "/sale",
         badge: "Hot",
         badgeVariant: "sale",
       },
     ];
-  }, [serverTree]);
+  }, [serverTree, t]);
 
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     men: true,
@@ -316,10 +325,10 @@ export function MobileDrawer({
             >
               <div className="flex items-center gap-2.5">
                 <Heart className="h-4 w-4 text-rose-500" />
-                <span>Wishlist</span>
+                <span>{t("nav.wishlist", "Wishlist")}</span>
               </div>
               <Badge variant="secondary" className="text-xs bg-rose-500/10 text-rose-600 dark:text-rose-400 border-transparent">
-                {wishlistCount} items
+                {wishlistCount} {t("nav.items", "items")}
               </Badge>
             </Link>
 
@@ -353,7 +362,7 @@ export function MobileDrawer({
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-200/70 dark:bg-neutral-800 text-xs font-semibold text-neutral-800 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-colors"
                 >
                   <User className="h-3.5 w-3.5" />
-                  <span>{user?.name?.split(" ")[0] || "Account"}</span>
+                  <span>{user?.name?.split(" ")[0] || t("nav.myProfile", "Account")}</span>
                 </Link>
               )}
             </div>
@@ -370,7 +379,7 @@ export function MobileDrawer({
                 ) : (
                   <LogOut className="h-4 w-4" />
                 )}
-                <span>{isLoggingOut ? "Signing out..." : "Sign Out"}</span>
+                <span>{isLoggingOut ? "Signing out..." : t("nav.logout", "Sign Out")}</span>
               </button>
             ) : (
               <div className="grid grid-cols-2 gap-2">
@@ -379,14 +388,14 @@ export function MobileDrawer({
                   onClick={onClose}
                   className="inline-flex items-center justify-center rounded-xl bg-neutral-900 dark:bg-white px-3 py-2.5 text-xs font-bold text-white dark:text-neutral-950 hover:opacity-90 transition-opacity text-center"
                 >
-                  Sign In
+                  {t("nav.signIn", "Sign In")}
                 </Link>
                 <Link
                   href="/register"
                   onClick={onClose}
                   className="inline-flex items-center justify-center rounded-xl bg-neutral-200/80 dark:bg-neutral-800 border border-neutral-300/50 dark:border-neutral-700 px-3 py-2.5 text-xs font-bold text-neutral-900 dark:text-white hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-colors text-center"
                 >
-                  Register
+                  {t("nav.register", "Register")}
                 </Link>
               </div>
             )}

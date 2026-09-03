@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import {
   Heart,
@@ -19,33 +19,44 @@ import { useGetProductsQuery } from "@/redux/api/productApi";
 import type { Product as BackendProduct } from "@/features/products";
 import type { Product as HomeProduct } from "@/components/home/homeData";
 import { cn } from "@/lib/utils";
+import { useTranslation, getCategoryI18nName } from "@/lib/i18n";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface SubCategoryFilter {
   name: string;
   slug: string;
 }
 
-interface StorefrontCatalogProps {
+export interface StorefrontCatalogProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
+  description?: string;
   badge?: string;
-  gender?: "MEN" | "WOMEN" | "UNISEX";
   categorySlug?: string;
+  gender?: "MEN" | "WOMEN" | "UNISEX";
+  initialSubCategory?: string;
   subCategories?: SubCategoryFilter[];
 }
 
-export function StorefrontCatalog({
+function StorefrontCatalogContent({
   title,
   subtitle,
+  description,
   badge = "SS/26 Collection",
-  gender,
   categorySlug,
+  gender,
+  initialSubCategory,
   subCategories = [],
 }: StorefrontCatalogProps) {
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string>("all");
+  const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>(initialSubCategory || "all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [quickViewProduct, setQuickViewProduct] = useState<HomeProduct | null>(null);
   const [wishlistMap, setWishlistMap] = useState<Record<string, boolean>>({});
+
+  const displaySubtitle = subtitle || description;
 
   // Query parameters
   const queryParams = {
@@ -142,14 +153,20 @@ export function StorefrontCatalog({
               </h1>
 
               {/* Subtitle */}
-              <p className="mt-2 text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl font-normal leading-relaxed">
-                {subtitle}
-              </p>
+              {displaySubtitle && (
+                <p className="mt-2 text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl font-normal leading-relaxed">
+                  {displaySubtitle}
+                </p>
+              )}
             </div>
 
             {/* Total count */}
-            <div className="text-xs sm:text-sm font-bold text-neutral-500 dark:text-neutral-400">
-              Showing <span className="text-neutral-950 dark:text-white">{products.length}</span> styles
+            <div className="text-xs sm:text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+              {t("shop.showing", "Showing")}{" "}
+              <span className="font-bold text-neutral-950 dark:text-white">
+                {products.length}
+              </span>{" "}
+              {t("shop.styles", "styles")}
             </div>
           </div>
         </div>
@@ -170,11 +187,12 @@ export function StorefrontCatalog({
                   : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
-              All Drops
+              {t("shop.allDrops", "All Drops")}
             </button>
 
             {subCategories.map((sub) => {
               const isSelected = selectedSubCategory === sub.slug;
+              const subDisplayName = getCategoryI18nName(sub.slug, sub.name, t);
               return (
                 <button
                   key={sub.slug}
@@ -187,7 +205,7 @@ export function StorefrontCatalog({
                       : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
                   )}
                 >
-                  {sub.name}
+                  {subDisplayName}
                 </button>
               );
             })}
@@ -201,9 +219,9 @@ export function StorefrontCatalog({
               onChange={(e) => setSortBy(e.target.value)}
               className="bg-transparent text-xs font-bold text-neutral-800 dark:text-neutral-200 border-0 focus:outline-none cursor-pointer"
             >
-              <option value="newest" className="dark:bg-neutral-900">Newest Drops</option>
-              <option value="price_asc" className="dark:bg-neutral-900">Price: Low to High</option>
-              <option value="price_desc" className="dark:bg-neutral-900">Price: High to Low</option>
+              <option value="newest" className="dark:bg-neutral-900">{t("shop.newestDrops", "Newest Drops")}</option>
+              <option value="price_asc" className="dark:bg-neutral-900">{t("shop.priceLowHigh", "Price: Low to High")}</option>
+              <option value="price_desc" className="dark:bg-neutral-900">{t("shop.priceHighLow", "Price: High to Low")}</option>
             </select>
           </div>
         </div>
@@ -232,17 +250,17 @@ export function StorefrontCatalog({
               <PackageOpen className="h-8 w-8" />
             </div>
             <h2 className="text-xl font-extrabold text-neutral-900 dark:text-white">
-              No products found in this category
+              {t("shop.noProducts", "No products found in this category")}
             </h2>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto">
-              Check back soon for new SS/26 archive drops, or explore other collections.
+              {t("shop.noProductsDesc", "Check back soon for new SS/26 archive drops, or explore other collections.")}
             </p>
             <Button
               variant="outline"
               onClick={() => setSelectedSubCategory("all")}
               className="mt-2"
             >
-              Reset Filters
+              {t("shop.resetFilters", "Reset Filters")}
             </Button>
           </div>
         ) : (
@@ -395,5 +413,19 @@ export function StorefrontCatalog({
         />
       )}
     </div>
+  );
+}
+
+export function StorefrontCatalog(props: StorefrontCatalogProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+        </div>
+      }
+    >
+      <StorefrontCatalogContent {...props} />
+    </Suspense>
   );
 }

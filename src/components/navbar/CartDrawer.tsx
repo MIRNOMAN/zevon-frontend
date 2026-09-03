@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight } from "lucide-react";
 import { CartItem } from "./types";
+import { useTranslation, formatPrice, toBengaliDigits } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface CartDrawerProps {
@@ -34,6 +35,7 @@ const INITIAL_CART_ITEMS: CartItem[] = [
 ];
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
+  const { t, language, isBn } = useTranslation();
   const [items, setItems] = useState<CartItem[]>(INITIAL_CART_ITEMS);
   const [isRendered, setIsRendered] = useState(false);
   const [isActive, setIsActive] = useState(false);
@@ -43,6 +45,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     let animTimer: NodeJS.Timeout;
     let frame1: number;
     let frame2: number;
+    let frame3: number;
 
     if (isOpen) {
       animTimer = setTimeout(() => {
@@ -133,10 +136,10 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             <div className="flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-neutral-900 dark:text-white" />
               <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white tracking-wide">
-                Your Shopping Bag
+                {t("cart.bagTitle", "Your Shopping Bag")}
               </h2>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                {totalCount}
+                {isBn ? toBengaliDigits(totalCount) : totalCount}
               </span>
             </div>
             <button
@@ -157,17 +160,17 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   <ShoppingBag className="h-8 w-8" />
                 </div>
                 <p className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  Your bag is currently empty
+                  {t("cart.emptyBag", "Your bag is currently empty")}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-xs">
-                  Discover our new seasonal drops and add your favorite essentials.
+                  {t("cart.emptyDesc", "Discover our new seasonal drops and add your favorite essentials.")}
                 </p>
                 <Link
                   href="/shop?filter=new"
                   onClick={onClose}
                   className="mt-2 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950 hover:opacity-90 transition-opacity"
                 >
-                  Explore New Drops <ArrowRight className="h-3.5 w-3.5" />
+                  {t("cart.exploreDrops", "Explore New Drops")} <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             ) : (
@@ -204,7 +207,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                        ৳{item.price.toLocaleString()}
+                        {formatPrice(item.price, language as "en" | "bn")}
                       </span>
 
                       {/* Quantity Controller */}
@@ -217,7 +220,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                           <Minus className="h-3 w-3" />
                         </button>
                         <span className="text-xs font-semibold text-neutral-900 dark:text-white w-4 text-center">
-                          {item.quantity}
+                          {isBn ? toBengaliDigits(item.quantity) : item.quantity}
                         </span>
                         <button
                           type="button"
@@ -239,25 +242,25 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             <div className="border-t border-neutral-200 dark:border-neutral-800 p-4 sm:p-6 bg-neutral-50/50 dark:bg-neutral-950/40 space-y-3.5">
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
-                  <span>Subtotal</span>
+                  <span>{t("cart.subtotal", "Subtotal")}</span>
                   <span className="font-semibold text-neutral-900 dark:text-white">
-                    ৳{subtotal.toLocaleString()}
+                    {formatPrice(subtotal, language as "en" | "bn")}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
-                  <span>Shipping</span>
+                  <span>{t("cart.shipping", "Shipping")}</span>
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    Calculated at checkout
+                    {t("cart.calculatedAtCheckout", "Calculated at checkout")}
                   </span>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex justify-between items-center">
                 <span className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white">
-                  Total
+                  {t("cart.total", "Total")}
                 </span>
                 <span className="text-sm sm:text-base font-extrabold text-neutral-900 dark:text-white">
-                  ৳{subtotal.toLocaleString()}
+                  {formatPrice(subtotal, language as "en" | "bn")}
                 </span>
               </div>
 
@@ -266,7 +269,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 onClick={onClose}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 dark:bg-white py-2.5 sm:py-3 px-4 text-xs sm:text-sm font-bold text-white dark:text-neutral-950 shadow-lg shadow-neutral-900/10 hover:opacity-95 active:scale-[0.99] transition-all"
               >
-                Proceed to Checkout
+                {t("cart.checkout", "Proceed to Checkout")}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

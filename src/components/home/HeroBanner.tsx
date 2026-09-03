@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGetBannersQuery } from "@/redux/api/bannerApi";
+import { useTranslation, toBengaliDigits } from "@/lib/i18n";
 import type { Banner } from "@/features/banners";
 
 // Fallback banner if backend is initializing or has no entries
@@ -41,50 +42,51 @@ const DEFAULT_BANNERS: Banner[] = [
   },
 ];
 
-const MARQUEE_ITEMS = [
-  {
-    icon: <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />,
-    text: "SS/26 DROPS NOW LIVE",
-    gradient: "from-amber-500 via-orange-500 to-rose-500",
-  },
-  {
-    icon: <Truck className="h-4 w-4 text-sky-500 shrink-0" />,
-    text: "FREE NATIONWIDE SHIPPING OVER ৳3000",
-    gradient: "from-sky-500 via-blue-500 to-indigo-500",
-  },
-  {
-    icon: <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />,
-    text: "380 GSM HEAVYWEIGHT COTTON",
-    gradient: "from-emerald-500 via-teal-500 to-cyan-500",
-  },
-  {
-    icon: <RotateCcw className="h-4 w-4 text-violet-500 shrink-0" />,
-    text: "7-DAY HASSLE-FREE EXCHANGES",
-    gradient: "from-violet-500 via-purple-500 to-pink-500",
-  },
-  {
-    icon: <Compass className="h-4 w-4 text-rose-500 shrink-0" />,
-    text: "ETHICALLY CRAFTED IN BANGLADESH",
-    gradient: "from-rose-500 via-red-500 to-amber-500",
-  },
-  {
-    icon: <Flame className="h-4 w-4 text-orange-500 shrink-0" />,
-    text: "LIMITED ARCHIVE DROPS",
-    gradient: "from-orange-500 via-amber-500 to-yellow-500",
-  },
-  {
-    icon: <Crown className="h-4 w-4 text-purple-400 shrink-0" />,
-    text: "PREMIUM STREETWEAR & LIFESTYLE",
-    gradient: "from-indigo-400 via-purple-400 to-pink-400",
-  },
-];
-
 const SLIDE_DURATION = 6500; // 6.5s per slide
 
 export function HeroBanner() {
+  const { t, isBn } = useTranslation();
   const { data: serverBanners, isLoading } = useGetBannersQuery({
     placement: "HERO",
   });
+
+  const MARQUEE_ITEMS = [
+    {
+      icon: <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />,
+      text: isBn ? "SS/26 নতুন কালেকশন এখন লাইভ" : "SS/26 DROPS NOW LIVE",
+      gradient: "from-amber-500 via-orange-500 to-rose-500",
+    },
+    {
+      icon: <Truck className="h-4 w-4 text-sky-500 shrink-0" />,
+      text: isBn ? "৳৩০০০+ অর্ডারে সারা দেশে ফ্রি ডেলিভারি" : "FREE NATIONWIDE SHIPPING OVER ৳3000",
+      gradient: "from-sky-500 via-blue-500 to-indigo-500",
+    },
+    {
+      icon: <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />,
+      text: isBn ? "৩৮০ জিএসএম প্রিমিয়াম হেভিওয়েট কটন" : "380 GSM HEAVYWEIGHT COTTON",
+      gradient: "from-emerald-500 via-teal-500 to-cyan-500",
+    },
+    {
+      icon: <RotateCcw className="h-4 w-4 text-violet-500 shrink-0" />,
+      text: isBn ? "৭ দিনের ঝামেলাহীন সাইজ এক্সচেঞ্জ" : "7-DAY HASSLE-FREE EXCHANGES",
+      gradient: "from-violet-500 via-purple-500 to-pink-500",
+    },
+    {
+      icon: <Compass className="h-4 w-4 text-rose-500 shrink-0" />,
+      text: isBn ? "বাংলাদেশে নৈতিকভাবে প্রস্তুতকৃত" : "ETHICALLY CRAFTED IN BANGLADESH",
+      gradient: "from-rose-500 via-red-500 to-amber-500",
+    },
+    {
+      icon: <Flame className="h-4 w-4 text-orange-500 shrink-0" />,
+      text: isBn ? "সীমিত সংস্করণ আর্কাইভ ড্রপ" : "LIMITED ARCHIVE DROPS",
+      gradient: "from-orange-500 via-amber-500 to-yellow-500",
+    },
+    {
+      icon: <Crown className="h-4 w-4 text-purple-400 shrink-0" />,
+      text: isBn ? "প্রিমিয়াম স্ট্রিটওয়্যার ও লাইফস্টাইল" : "PREMIUM STREETWEAR & LIFESTYLE",
+      gradient: "from-indigo-400 via-purple-400 to-pink-400",
+    },
+  ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -266,7 +268,7 @@ export function HeroBanner() {
                   size="lg"
                   className="w-full sm:w-auto font-bold tracking-wide gap-2 group shadow-lg shadow-neutral-900/10 dark:shadow-none transition-all duration-200"
                 >
-                  {currentBanner.ctaText || "Explore New Drops"}
+                  {isBn ? "নতুন ড্রপ দেখুন" : (currentBanner.ctaText || "Explore New Drops")}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
@@ -278,7 +280,7 @@ export function HeroBanner() {
                   className="w-full sm:w-auto font-bold tracking-wide gap-2 border-neutral-300 dark:border-neutral-700"
                 >
                   <Flame className="h-4 w-4 text-rose-500" />
-                  Shop Seasonal Sale
+                  {isBn ? "সেল কালেকশন" : "Shop Seasonal Sale"}
                 </Button>
               </Link>
             </div>
@@ -287,23 +289,23 @@ export function HeroBanner() {
             <div className="pt-6 border-t border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center lg:justify-start gap-6 sm:gap-10 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
               <div>
                 <span className="block text-base font-extrabold text-neutral-900 dark:text-white">
-                  380+ GSM
+                  {isBn ? "৩৮০+ জিএসএম" : "380+ GSM"}
                 </span>
-                Heavyweight Cotton
+                {isBn ? "হেভিওয়েট কটন" : "Heavyweight Cotton"}
               </div>
               <div className="h-6 w-px bg-neutral-200 dark:bg-neutral-800" />
               <div>
                 <span className="block text-base font-extrabold text-neutral-900 dark:text-white">
-                  24-48h
+                  {isBn ? "২৪-৪৮ঘণ্টা" : "24-48h"}
                 </span>
-                Express Delivery
+                {isBn ? "এক্সপ্রেস ডেলিভারি" : "Express Delivery"}
               </div>
               <div className="h-6 w-px bg-neutral-200 dark:bg-neutral-800" />
               <div>
                 <span className="block text-base font-extrabold text-neutral-900 dark:text-white">
-                  4.9 / 5
+                  {isBn ? "৪.৯ / ৫" : "4.9 / 5"}
                 </span>
-                Verified Reviews
+                {isBn ? "ভেরিফাইড রিভিউ" : "Verified Reviews"}
               </div>
             </div>
           </div>

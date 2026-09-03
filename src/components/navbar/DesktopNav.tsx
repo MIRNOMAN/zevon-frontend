@@ -8,16 +8,25 @@ import { NavDropdown } from "./NavDropdown";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useGetCategoryTreeQuery } from "@/redux/api/categoryApi";
+import { useTranslation, getCategoryI18nName, getCategoryI18nDesc } from "@/lib/i18n";
 import type { NavCategory } from "./types";
 
 function NavItemsList() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
   const { data: serverTree } = useGetCategoryTreeQuery();
 
   const navCategories: NavCategory[] = useMemo(() => {
     if (!serverTree || serverTree.length === 0) {
-      return NAV_CATEGORIES;
+      return NAV_CATEGORIES.map((cat) => ({
+        ...cat,
+        title: getCategoryI18nName(cat.id, cat.title, t),
+        subCategories: cat.subCategories?.map((sub) => ({
+          ...sub,
+          title: t(`categories.${sub.title.toLowerCase().replace(/[^a-z]/g, "")}`, sub.title),
+        })),
+      }));
     }
 
     const menCat = serverTree.find((c) => c.slug === "men");
@@ -28,13 +37,13 @@ function NavItemsList() {
     if (menCat) {
       dynamicCategories.push({
         id: "men",
-        title: "Men",
+        title: t("nav.men", "Men"),
         href: "/men",
         productCount: menCat._count?.products ?? 0,
         subCategories: menCat.children?.map((sub) => ({
-          title: sub.name,
+          title: getCategoryI18nName(sub.slug, sub.name, t),
           href: `/shop?category=${sub.slug}`,
-          description: sub.description || undefined,
+          description: getCategoryI18nDesc(sub.slug, sub.description || undefined, t),
           productCount: sub._count?.products ?? 0,
         })),
       });
@@ -43,13 +52,13 @@ function NavItemsList() {
     if (womenCat) {
       dynamicCategories.push({
         id: "women",
-        title: "Women",
+        title: t("nav.women", "Women"),
         href: "/women",
         productCount: womenCat._count?.products ?? 0,
         subCategories: womenCat.children?.map((sub) => ({
-          title: sub.name,
+          title: getCategoryI18nName(sub.slug, sub.name, t),
           href: `/shop?category=${sub.slug}`,
-          description: sub.description || undefined,
+          description: getCategoryI18nDesc(sub.slug, sub.description || undefined, t),
           productCount: sub._count?.products ?? 0,
         })),
       });
@@ -60,13 +69,13 @@ function NavItemsList() {
     for (const cat of otherCats) {
       dynamicCategories.push({
         id: cat.slug,
-        title: cat.name.replace(/^(Tailored|Architectural)\s*/i, "").trim() || cat.name,
+        title: getCategoryI18nName(cat.slug, cat.name, t),
         href: `/shop?category=${cat.slug}`,
         productCount: cat._count?.products ?? 0,
         subCategories: cat.children?.map((sub) => ({
-          title: sub.name,
+          title: getCategoryI18nName(sub.slug, sub.name, t),
           href: `/shop?category=${sub.slug}`,
-          description: sub.description || undefined,
+          description: getCategoryI18nDesc(sub.slug, sub.description || undefined, t),
           productCount: sub._count?.products ?? 0,
         })),
       });
@@ -76,20 +85,20 @@ function NavItemsList() {
       ...dynamicCategories,
       {
         id: "new-drops",
-        title: "New Drops",
+        title: t("nav.newDrops", "New Drops"),
         href: "/shop?filter=new",
         badge: "SS/26",
         badgeVariant: "new",
       },
       {
         id: "sale",
-        title: "Sale",
+        title: t("nav.sale", "Sale"),
         href: "/sale",
         badge: "Hot",
         badgeVariant: "sale",
       },
     ];
-  }, [serverTree]);
+  }, [serverTree, t]);
 
   return (
     <div className="flex items-center gap-1 xl:gap-2">

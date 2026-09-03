@@ -9,32 +9,32 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/redux/api/categoryApi";
-
-const DEFAULT_TABS = [
-  { id: "all", label: "All Drops" },
-  { id: "men", label: "Men's Streetwear" },
-  { id: "women", label: "Women's Essentials" },
-  { id: "accessories", label: "Accessories" },
-  { id: "sale", label: "Sale Edition" },
-];
+import { useTranslation, getCategoryI18nName, formatPrice } from "@/lib/i18n";
 
 export function FeaturedNewArrivals() {
+  const { t, language, isBn } = useTranslation();
   const { data: serverCategories } = useGetCategoriesQuery({ onlyRoot: true });
 
   const dynamicTabs = React.useMemo(() => {
     if (!serverCategories || serverCategories.length === 0) {
-      return DEFAULT_TABS;
+      return [
+        { id: "all", label: t("home.allDropsTab", "All Drops") },
+        { id: "men", label: t("nav.men", "Men") },
+        { id: "women", label: t("nav.women", "Women") },
+        { id: "accessories", label: t("nav.accessories", "Accessories") },
+        { id: "sale", label: t("home.saleEditionTab", "Sale Edition") },
+      ];
     }
     const catTabs = serverCategories.map((c) => ({
       id: c.slug,
-      label: c.name,
+      label: getCategoryI18nName(c.slug, c.name, t),
     }));
     return [
-      { id: "all", label: "All Drops" },
+      { id: "all", label: t("home.allDropsTab", "All Drops") },
       ...catTabs,
-      { id: "sale", label: "Sale Edition" },
+      { id: "sale", label: t("home.saleEditionTab", "Sale Edition") },
     ];
-  }, [serverCategories]);
+  }, [serverCategories, t]);
 
   const [activeTab, setActiveTab] = useState("all");
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -60,10 +60,10 @@ export function FeaturedNewArrivals() {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-2">
               <Sparkles className="h-3.5 w-3.5 text-rose-500" />
-              <span>Seasonal Selection</span>
+              <span>{isBn ? "সিজনাল সিলেকশন" : "Seasonal Selection"}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-neutral-950 dark:text-white">
-              NEW ARRIVALS &amp; BESTSELLERS
+              {t("home.arrivalsTitle", "NEW ARRIVALS & BESTSELLERS")}
             </h2>
           </div>
 
@@ -104,17 +104,18 @@ export function FeaturedNewArrivals() {
                   <img
                     src={product.images[0]}
                     alt={product.name}
-                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
                   />
 
                   {/* Badges */}
                   {product.badge && (
-                    <div className="absolute top-2.5 left-2.5 z-10">
+                    <div className="absolute top-3 left-3 z-10">
                       <Badge
                         variant={product.badge === "SALE" ? "sale" : "new"}
-                        className="text-[10px] font-black uppercase px-2 py-0.5"
+                        className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5"
                       >
-                        {product.badge}
+                        {product.badge === "SALE" ? t("shop.saleBadge", "SALE") : t("shop.newBadge", "NEW")}
                       </Badge>
                     </div>
                   )}
@@ -124,9 +125,9 @@ export function FeaturedNewArrivals() {
                     type="button"
                     onClick={(e) => toggleWishlist(product.id, e)}
                     aria-label="Add to wishlist"
-                    className="absolute top-2.5 right-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md text-neutral-600 dark:text-neutral-300 hover:text-rose-500 shadow-sm transition-all focus:outline-none"
+                    className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md text-neutral-700 dark:text-neutral-300 hover:text-rose-500 transition-colors shadow-xs"
                   >
-                    <Heart className={cn("h-4 w-4", isWishlisted && "fill-rose-500 text-rose-500")} />
+                    <Heart className={cn("h-4 w-4 transition-colors", isWishlisted && "fill-rose-500 text-rose-500")} />
                   </button>
 
                   {/* Quick-View Overlay Action */}
@@ -137,7 +138,7 @@ export function FeaturedNewArrivals() {
                       className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md py-2.5 text-xs font-bold text-neutral-900 dark:text-white shadow-lg hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-950 transition-colors focus:outline-none"
                     >
                       <Eye className="h-3.5 w-3.5" />
-                      Quick View
+                      {t("home.quickView", "Quick View")}
                     </button>
                   </div>
                 </div>
@@ -176,11 +177,11 @@ export function FeaturedNewArrivals() {
                   <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-sm sm:text-base font-extrabold text-neutral-950 dark:text-white">
-                        ৳{product.price.toLocaleString()}
+                        {formatPrice(product.price, language as "en" | "bn")}
                       </span>
                       {product.originalPrice && (
                         <span className="text-xs font-medium text-neutral-400 line-through">
-                          ৳{product.originalPrice.toLocaleString()}
+                          {formatPrice(product.originalPrice, language as "en" | "bn")}
                         </span>
                       )}
                     </div>
@@ -204,7 +205,7 @@ export function FeaturedNewArrivals() {
         <div className="mt-12 text-center">
           <Link href="/shop">
             <Button variant="outline" size="lg" className="font-bold tracking-wide gap-2 border-neutral-300 dark:border-neutral-700">
-              View All 120+ Products
+              {isBn ? "সকল ১২০+ পণ্য দেখুন" : "View All 120+ Products"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
