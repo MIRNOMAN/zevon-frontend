@@ -1,8 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import Link from "next/link";
-import { Heart, Check, X, ArrowRight, Trash2 } from "lucide-react";
+import { Heart, X, Trash2 } from "lucide-react";
 import { useAppSelector } from "@/redux/hooks";
 import { selectIsAuthenticated } from "@/redux/features/authSlice";
 import {
@@ -36,6 +43,8 @@ interface WishlistContextType {
   wishlistIds: string[];
   wishlistItems: WishlistProductItem[];
   wishlistCount: number;
+  isLoading: boolean;
+  isMounted: boolean;
   isInWishlist: (productId: string) => boolean;
   toggleWishlist: (product: WishlistProductItem) => Promise<void>;
   removeFromWishlist: (productId: string) => Promise<void>;
@@ -48,44 +57,42 @@ const STORAGE_KEY = "zevon_wishlist_items";
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { isBn } = useTranslation();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const [localWishlist, setLocalWishlist] = useState<WishlistProductItem[]>([]);
+  const [items, setItems] = useState<WishlistProductItem[]>([]);
   const [toast, setToast] = useState<ToastNotification | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const initialLoadDone = useRef(false);
 
-  // Backend RTK Query (only triggers when authenticated)
-  const { data: serverWishlist } = useGetWishlistQuery(undefined, {
-    skip: !isAuthenticated,
-  });
+  // Backend RTK Query (auto triggers when authenticated)
+  const { data: serverWishlist, isLoading: isServerLoading } = useGetWishlistQuery(
+    undefined,
+    { skip: !isAuthenticated }
+  );
   const [triggerToggle] = useToggleWishlistMutation();
 
-  // Load guest wishlist from localStorage
+  // Load from localStorage immediately on mount
   useEffect(() => {
     setIsMounted(true);
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        setLocalWishlist(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setItems(parsed);
+        }
       }
     } catch {
-      // Ignore
+      // Ignore storage errors
     }
+    initialLoadDone.current = true;
   }, []);
 
-  // Save guest wishlist to localStorage
-  const saveToStorage = (items: WishlistProductItem[]) => {
-    setLocalWishlist(items);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {
-      // Ignore
-    }
-  };
-
-  // Determine active wishlist items
-  const activeItems: WishlistProductItem[] = isAuthenticated && serverWishlist?.items
-    ? serverWishlist.items.map((item) => ({
+  // When server wishlist loads, merge and persist
+  useEffect(() => {
+    if (isAuthenticated && serverWishlist?.items) {
+      const serverMapped: WishlistProductItem[] = serverWishlist.items.map((item) => ({
         id: item.product.id,
         title: item.product.title || item.product.name || "Product",
+        name: item.product.title || item.product.name || "Product",
         slug: item.product.slug,
         price: item.product.discountPrice || item.product.basePrice || 0,
         basePrice: item.product.basePrice,
@@ -98,16 +105,40 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
           item.product.image ||
           "",
         category: item.product.category,
-      }))
-    : localWishlist;
+      }));
 
-  const wishlistIds = activeItems.map((i) => i.id);
+      setItems(serverMapped);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serverMapped));
+      } catch {
+        // Ignore
+      }
+    }
+  }, [isAuthenticated, serverWishlist]);
+
+  // Helper to persist state & storage
+  const persistItems = (newItems: WishlistProductItem[]) => {
+    setItems(newItems);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+    } catch {
+      // Ignore
+    }
+  };
+
+  const wishlistIds = items.map((i) => i.id);
 
   const isInWishlist = useCallback(
     (productId: string) => {
-      return wishlistIds.includes(productId);
+      if (!productId) return false;
+      return items.some(
+        (item) =>
+          item.id === productId ||
+          (item.slug && item.slug === productId) ||
+          (item.title && item.title.toLowerCase() === productId.toLowerCase())
+      );
     },
-    [wishlistIds]
+    [items]
   );
 
   const showToast = (product: WishlistProductItem, type: "added" | "removed") => {
@@ -134,47 +165,48 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleWishlist = async (product: WishlistProductItem) => {
-    const isCurrentlySaved = isInWishlist(product.id);
+    const isSaved = isInWishlist(product.id) || (product.slug ? isInWishlist(product.slug) : false);
 
+    let nextItems: WishlistProductItem[];
+    if (isSaved) {
+      nextItems = items.filter(
+        (i) =>
+          i.id !== product.id &&
+          (!product.slug || i.slug !== product.slug)
+      );
+    } else {
+      nextItems = [product, ...items.filter((i) => i.id !== product.id)];
+    }
+
+    // Optimistically update instantly
+    persistItems(nextItems);
+    showToast(product, isSaved ? "removed" : "added");
+
+    // Sync with backend if authenticated
     if (isAuthenticated) {
       try {
-        await triggerToggle(product.id).unwrap();
-        showToast(product, isCurrentlySaved ? "removed" : "added");
+        await triggerToggle(product.id || product.slug).unwrap();
       } catch {
-        // Fallback to local
-        const next = isCurrentlySaved
-          ? localWishlist.filter((i) => i.id !== product.id)
-          : [...localWishlist, product];
-        saveToStorage(next);
-        showToast(product, isCurrentlySaved ? "removed" : "added");
+        // Keeps local state
       }
-    } else {
-      // Guest mode
-      const next = isCurrentlySaved
-        ? localWishlist.filter((i) => i.id !== product.id)
-        : [...localWishlist, product];
-      saveToStorage(next);
-      showToast(product, isCurrentlySaved ? "removed" : "added");
     }
   };
 
   const removeFromWishlist = async (productId: string) => {
-    const item = activeItems.find((i) => i.id === productId);
-    if (!item) return;
+    const item = items.find((i) => i.id === productId || i.slug === productId);
+    const nextItems = items.filter((i) => i.id !== productId && i.slug !== productId);
+
+    persistItems(nextItems);
+    if (item) {
+      showToast(item, "removed");
+    }
 
     if (isAuthenticated) {
       try {
         await triggerToggle(productId).unwrap();
-        showToast(item, "removed");
       } catch {
-        const next = localWishlist.filter((i) => i.id !== productId);
-        saveToStorage(next);
-        showToast(item, "removed");
+        // Keeps local state
       }
-    } else {
-      const next = localWishlist.filter((i) => i.id !== productId);
-      saveToStorage(next);
-      showToast(item, "removed");
     }
   };
 
@@ -182,8 +214,10 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     <WishlistContext.Provider
       value={{
         wishlistIds,
-        wishlistItems: activeItems,
-        wishlistCount: isMounted ? activeItems.length : 0,
+        wishlistItems: items,
+        wishlistCount: items.length,
+        isLoading: !isMounted || (isAuthenticated && isServerLoading && items.length === 0),
+        isMounted,
         isInWishlist,
         toggleWishlist,
         removeFromWishlist,

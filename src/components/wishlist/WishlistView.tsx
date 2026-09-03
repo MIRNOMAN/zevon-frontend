@@ -10,6 +10,7 @@ import {
   Sparkles,
   Check,
   Package,
+  Loader2,
 } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
 import { useTranslation, formatPrice, toBengaliDigits } from "@/lib/i18n";
@@ -18,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 export function WishlistView() {
   const { t, language, isBn } = useTranslation();
-  const { wishlistItems, wishlistCount, removeFromWishlist } = useWishlist();
+  const { wishlistItems, wishlistCount, removeFromWishlist, isMounted, isLoading } = useWishlist();
   const [addedMap, setAddedMap] = useState<Record<string, boolean>>({});
 
   const handleAddToCart = (id: string) => {
@@ -47,7 +48,7 @@ export function WishlistView() {
               <Heart className="h-3.5 w-3.5 fill-rose-500 text-rose-500" />
               <span>
                 {t("wishlist.title", "My Wishlist")}
-                {wishlistCount > 0 && (
+                {isMounted && wishlistCount > 0 && (
                   <span className="ml-2 px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-[11px] font-bold text-neutral-900 dark:text-white">
                     {isBn ? toBengaliDigits(wishlistCount) : wishlistCount}
                   </span>
@@ -64,7 +65,22 @@ export function WishlistView() {
         </div>
 
         {/* ── Main Content ───────────────────────────────────── */}
-        {wishlistItems.length === 0 ? (
+        {!isMounted || isLoading ? (
+          /* Loading Skeleton State */
+          <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="rounded-3xl bg-neutral-100 dark:bg-neutral-900 p-4 space-y-3 animate-pulse border border-neutral-200/50 dark:border-neutral-800"
+              >
+                <div className="aspect-[3/4] w-full rounded-2xl bg-neutral-200 dark:bg-neutral-800" />
+                <div className="h-4 w-3/4 rounded bg-neutral-200 dark:bg-neutral-800" />
+                <div className="h-4 w-1/2 rounded bg-neutral-200 dark:bg-neutral-800" />
+                <div className="h-9 w-full rounded-xl bg-neutral-200 dark:bg-neutral-800" />
+              </div>
+            ))}
+          </div>
+        ) : wishlistItems.length === 0 ? (
           /* Empty State */
           <div className="py-20 sm:py-28 text-center space-y-4 max-w-md mx-auto">
             <div className="h-20 w-20 rounded-3xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 mx-auto shadow-inner">
