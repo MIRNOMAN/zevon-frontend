@@ -24,6 +24,20 @@ export interface ProductCategory {
   parentId?: string | null;
 }
 
+export interface ProductReview {
+  id: string;
+  rating: number;
+  comment: string;
+  images?: string[];
+  isVerifiedPurchase?: boolean;
+  createdAt: string;
+  user?: {
+    id: string;
+    name: string;
+    avatarUrl?: string | null;
+  };
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -50,6 +64,8 @@ export interface Product {
   availableColors?: { color: string; colorCode: string }[];
   reviewCount?: number;
   averageRating?: number;
+  reviews?: ProductReview[];
+  ratingBreakdown?: { [key: number]: number };
   createdAt: string;
   updatedAt: string;
 

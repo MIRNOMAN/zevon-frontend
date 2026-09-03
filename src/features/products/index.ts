@@ -9,6 +9,7 @@
 // Types
 export type {
   Product,
+  ProductReview,
   ProductListResponse,
   ProductQueryFilters,
   CreateProductInput,
