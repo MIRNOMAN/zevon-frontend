@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useGetProductsQuery } from "@/redux/api/productApi";
+import { FEATURED_PRODUCTS } from "@/components/home/homeData";
 import type { Product } from "@/features/products";
 import { useTranslation, formatPrice, getCategoryI18nName, toBengaliDigits } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(query.trim());
-    }, 250);
+    }, 200);
     return () => clearTimeout(handler);
   }, [query]);
 
@@ -47,7 +48,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   } = useGetProductsQuery(
     {
       search: debouncedQuery,
-      limit: 6,
+      limit: 8,
       isPublished: true,
     },
     {
@@ -55,7 +56,69 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   );
 
-  const productsList: Product[] = searchData?.products || [];
+  // Combine backend search results + local featured catalog matches
+  const productsList = useMemo((): Product[] => {
+    if (!debouncedQuery) return [];
+
+    const serverProducts: Product[] = searchData?.products || [];
+    const q = debouncedQuery.toLowerCase();
+
+    // Find any local featured matches
+    const localMatches: Product[] = FEATURED_PRODUCTS.filter((p) => {
+      return (
+        p.name?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.subcategory?.toLowerCase().includes(q) ||
+        p.category?.toLowerCase().includes(q) ||
+        p.colors?.some((c) => c.name.toLowerCase().includes(q))
+      );
+    }).map((p) => {
+      const generatedSlug = p.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      return {
+        id: p.id,
+        title: p.name,
+        name: p.name,
+        slug: generatedSlug,
+        description: p.description,
+        basePrice: p.price,
+        discountPrice: p.originalPrice ? p.price : null,
+        price: p.price,
+        category: {
+          id: p.category,
+          name: p.subcategory || p.category,
+          slug: p.subcategory
+            ? p.subcategory.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+            : p.category,
+        },
+        images: p.images,
+        primaryImage: { url: p.images[0], isPrimary: true },
+        inStock: p.inStock,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as Product;
+    });
+
+    // Merge unique by slug or title
+    const combined = [...serverProducts];
+    for (const item of localMatches) {
+      const exists = combined.some(
+        (cp) =>
+          cp.slug === item.slug ||
+          cp.title?.toLowerCase().trim() === item.title?.toLowerCase().trim() ||
+          cp.id === item.id
+      );
+      if (!exists) {
+        combined.push(item);
+      }
+    }
+
+    return combined;
+  }, [debouncedQuery, searchData]);
+
   const hasQuery = debouncedQuery.length > 0;
   const isBusy = isSearching || isFetching;
 
