@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   X,
   ChevronDown,
@@ -13,6 +13,7 @@ import {
   LogOut,
   Shield,
   Loader2,
+  Search,
 } from "lucide-react";
 import { NAV_CATEGORIES } from "./navData";
 import { ZevonLogo } from "./Logo";
@@ -34,18 +35,32 @@ import type { NavCategory } from "./types";
 interface MobileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenSearch?: () => void;
   wishlistCount?: number;
 }
 
 export function MobileDrawer({
   isOpen,
   onClose,
-  wishlistCount = 2,
+  onOpenSearch,
+  wishlistCount = 0,
 }: MobileDrawerProps) {
-  const { t } = useTranslation();
+  const { t, isBn } = useTranslation();
+  const pathname = usePathname();
+  const router = useRouter();
   const { data: serverTree } = useGetCategoryTreeQuery();
 
-  const navCategories: NavCategory[] = React.useMemo(() => {
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectCurrentUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const [triggerLogout, { isLoading: isLoggingOut }] = useLogoutMutation();
+
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
+    men: true,
+  });
+  const [isRendered, setIsRendered] = useState(false);
+
+  const navCategories = useMemo((): NavCategory[] => {
     if (!serverTree || serverTree.length === 0) {
       return NAV_CATEGORIES.map((cat) => ({
         ...cat,
@@ -92,7 +107,6 @@ export function MobileDrawer({
       });
     }
 
-    // Include other root categories like Outerwear/Accessories if present
     const otherCats = serverTree.filter((c) => c.slug !== "men" && c.slug !== "women");
     for (const cat of otherCats) {
       dynamicCategories.push({
@@ -109,8 +123,7 @@ export function MobileDrawer({
       });
     }
 
-    return [
-      ...dynamicCategories,
+    dynamicCategories.push(
       {
         id: "new-drops",
         title: t("nav.newDrops", "New Drops"),
@@ -124,29 +137,29 @@ export function MobileDrawer({
         href: "/sale",
         badge: "Hot",
         badgeVariant: "sale",
-      },
-    ];
+      }
+    );
+
+    return dynamicCategories;
   }, [serverTree, t]);
 
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    men: true,
-  });
-  const pathname = usePathname();
-  const dispatch = useAppDispatch();
-  const user = useAppSelector(selectCurrentUser);
-  const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const [triggerLogout, { isLoading: isLoggingOut }] = useLogoutMutation();
-
-  // Lock background scroll when open
   useEffect(() => {
+    let animTimer: NodeJS.Timeout;
     if (isOpen) {
+      animTimer = setTimeout(() => {
+        setIsRendered(true);
+      }, 0);
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "unset";
+      animTimer = setTimeout(() => {
+        const exitTimer = setTimeout(() => {
+          setIsRendered(false);
+          document.body.style.overflow = "unset";
+        }, 300);
+        return () => clearTimeout(exitTimer);
+      }, 0);
     }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    return () => clearTimeout(animTimer);
   }, [isOpen]);
 
   const toggleAccordion = (categoryId: string) => {
@@ -163,10 +176,13 @@ export function MobileDrawer({
       dispatch(logout());
     } finally {
       onClose();
+      router.push("/login");
     }
   };
 
   const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
+
+  if (!isRendered) return null;
 
   return (
     <div
@@ -176,7 +192,6 @@ export function MobileDrawer({
       )}
       aria-hidden={!isOpen}
     >
-      {/* Backdrop */}
       <div
         className={cn(
           "fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 ease-out",
@@ -185,7 +200,6 @@ export function MobileDrawer({
         onClick={onClose}
       />
 
-      {/* Drawer Panel */}
       <div className="fixed inset-y-0 left-0 max-w-full flex">
         <div
           className={cn(
@@ -193,7 +207,6 @@ export function MobileDrawer({
             isOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
-          {/* Header */}
           <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
             <ZevonLogo className="h-7 w-auto" />
             <button
@@ -206,8 +219,28 @@ export function MobileDrawer({
             </button>
           </div>
 
-          {/* Navigation Accordion List */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+          {onOpenSearch && (
+            <div className="px-4 pt-3 pb-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenSearch();
+                }}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-500 dark:text-neutral-400 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-neutral-400 transition-all"
+              >
+                <span className="flex items-center gap-2">
+                  <Search className="h-3.5 w-3.5" />
+                  <span>{t("search.placeholder", "Search products...")}</span>
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white dark:bg-neutral-900 shadow-xs">
+                  {isBn ? "অনুসন্ধান" : "Search"}
+                </span>
+              </button>
+            </div>
+          )}
+
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
             {navCategories.map((category) => {
               const hasSubcategories =
                 category.subCategories && category.subCategories.length > 0;

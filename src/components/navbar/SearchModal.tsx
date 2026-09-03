@@ -1,9 +1,22 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, X, TrendingUp, ArrowRight, CornerDownLeft } from "lucide-react";
-import { useTranslation } from "@/lib/i18n";
+import {
+  Search,
+  X,
+  TrendingUp,
+  ArrowRight,
+  CornerDownLeft,
+  Loader2,
+  Package,
+  ShoppingBag,
+  Sparkles,
+} from "lucide-react";
+import { useGetProductsQuery } from "@/redux/api/productApi";
+import type { Product } from "@/features/products";
+import { useTranslation, formatPrice, getCategoryI18nName, toBengaliDigits } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface SearchModalProps {
@@ -12,10 +25,39 @@ interface SearchModalProps {
 }
 
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
-  const { t, isBn } = useTranslation();
+  const { t, language, isBn } = useTranslation();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  // Debounce user input to optimize backend requests
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query.trim());
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [query]);
+
+  // Fetch real-time products matching search from backend
+  const {
+    data: searchData,
+    isLoading: isSearching,
+    isFetching,
+  } = useGetProductsQuery(
+    {
+      search: debouncedQuery,
+      limit: 6,
+      isPublished: true,
+    },
+    {
+      skip: !debouncedQuery,
+    }
+  );
+
+  const productsList: Product[] = searchData?.products || [];
+  const hasQuery = debouncedQuery.length > 0;
+  const isBusy = isSearching || isFetching;
 
   // Focus input on open & lock background scroll
   useEffect(() => {
@@ -27,6 +69,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       return () => clearTimeout(timer);
     } else {
       document.body.style.overflow = "unset";
+      setQuery("");
+      setDebouncedQuery("");
     }
     return () => {
       document.body.style.overflow = "unset";
@@ -58,6 +102,33 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     onClose();
   };
 
+  const handleProductClick = (slug: string) => {
+    router.push(`/products/${slug}`);
+    onClose();
+  };
+
+  // Helper to extract image URL safely
+  const getProductImageUrl = (p: Product) => {
+    if (p.primaryImage?.url) return p.primaryImage.url;
+    if (p.images && p.images.length > 0) {
+      const first = p.images[0];
+      if (typeof first === "string") return first;
+      if (first && typeof first === "object" && "url" in first) return first.url;
+    }
+    if (p.image) return p.image;
+    return "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300&auto=format&fit=crop&q=80";
+  };
+
+  const getProductCategoryName = (p: Product) => {
+    if (p.category && typeof p.category === "object") {
+      return getCategoryI18nName(p.category.slug, p.category.name, t);
+    }
+    if (typeof p.category === "string") {
+      return getCategoryI18nName(p.category, p.category, t);
+    }
+    return p.gender || (isBn ? "পোশাক" : "Apparel");
+  };
+
   const trendingTags = isBn
     ? ["হেভিওয়েট টি-শার্ট", "কার্গো প্যান্ট", "ওভারসাইজড হুডি", "ড্রপ শোল্ডার", "ক্যাপ ও টুপি", "উইমেন কো-অর্ড"]
     : ["Heavyweight Tee", "Cargo Pants", "Oversized Hoodie", "Drop Shoulder", "Caps & Beanies", "Women's Co-ords"];
@@ -74,7 +145,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 overflow-hidden transition-all duration-250",
+        "fixed inset-0 z-50 flex items-start justify-center pt-14 sm:pt-20 px-4 overflow-hidden transition-all duration-250",
         isOpen ? "pointer-events-auto visible" : "pointer-events-none invisible"
       )}
       aria-hidden={!isOpen}
@@ -91,7 +162,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       {/* Modal Dialog with smooth scale transition */}
       <div
         className={cn(
-          "relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-10 transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          "relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-10 flex flex-col max-h-[85vh] transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]",
           isOpen
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-95 -translate-y-2"
@@ -100,9 +171,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         {/* Search Input Bar */}
         <form
           onSubmit={handleSubmit}
-          className="relative flex items-center px-4 py-3.5 border-b border-neutral-100 dark:border-neutral-800/90 bg-transparent"
+          className="relative flex items-center px-4 py-3.5 border-b border-neutral-100 dark:border-neutral-800/90 bg-transparent shrink-0"
         >
-          <Search className="h-5 w-5 text-neutral-400 dark:text-neutral-500 shrink-0 ml-1" />
+          {isBusy ? (
+            <Loader2 className="h-5 w-5 text-neutral-400 dark:text-neutral-500 shrink-0 ml-1 animate-spin" />
+          ) : (
+            <Search className="h-5 w-5 text-neutral-400 dark:text-neutral-500 shrink-0 ml-1" />
+          )}
           <input
             ref={inputRef}
             type="text"
@@ -125,15 +200,145 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors focus:outline-none"
+            className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors focus:outline-none shrink-0"
           >
             <span>ESC</span>
           </button>
         </form>
 
-        {/* Content Section */}
-        <div className="p-5 max-h-[60vh] overflow-y-auto space-y-5">
-          {/* Trending Searches */}
+        {/* Dynamic Scrollable Content */}
+        <div className="p-5 overflow-y-auto space-y-5 flex-1">
+          {/* CASE 1: Active Live Product Results from Backend */}
+          {hasQuery && (
+            <div>
+              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-3">
+                <div className="flex items-center gap-1.5">
+                  <Package className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" />
+                  <span>
+                    {t("search.matchingProducts", "Matching Products")}
+                    {productsList.length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-[10px]">
+                        {isBn ? toBengaliDigits(productsList.length) : productsList.length}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {isBusy && (
+                  <span className="text-[11px] font-normal text-neutral-400 dark:text-neutral-500">
+                    {t("search.searching", "Searching...")}
+                  </span>
+                )}
+              </div>
+
+              {/* Product Live Matches List */}
+              {productsList.length > 0 ? (
+                <div className="space-y-2">
+                  {productsList.map((product) => {
+                    const imgUrl = getProductImageUrl(product);
+                    const categoryName = getProductCategoryName(product);
+                    const price = product.discountPrice || product.basePrice || product.price || 0;
+                    const originalPrice = product.discountPrice ? (product.basePrice || product.price) : undefined;
+
+                    return (
+                      <div
+                        key={product.id}
+                        onClick={() => handleProductClick(product.slug)}
+                        className="group flex items-center justify-between p-2.5 rounded-2xl border border-neutral-100 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-800/30 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:border-neutral-200 dark:hover:border-neutral-700 transition-all cursor-pointer"
+                      >
+                        {/* Left: Product Thumbnail & Info */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="relative h-14 w-14 rounded-xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 shrink-0 border border-neutral-200/60 dark:border-neutral-700/60">
+                            <img
+                              src={imgUrl}
+                              alt={product.title || product.name || "Product"}
+                              className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          </div>
+
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block truncate">
+                              {categoryName}
+                            </span>
+                            <h4 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white truncate group-hover:text-neutral-950 dark:group-hover:text-white">
+                              {product.title || product.name}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs font-extrabold text-neutral-900 dark:text-white">
+                                {formatPrice(price, language as "en" | "bn")}
+                              </span>
+                              {originalPrice && (
+                                <span className="text-[11px] text-neutral-400 line-through">
+                                  {formatPrice(originalPrice, language as "en" | "bn")}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right: Quick Action View */}
+                        <div className="flex items-center gap-2 shrink-0 pl-2">
+                          <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+                            <span>{isBn ? "দেখুন" : "View"}</span>
+                            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                          </span>
+                          <div className="h-7 w-7 rounded-full bg-white dark:bg-neutral-700 flex items-center justify-center text-neutral-600 dark:text-neutral-300 group-hover:bg-neutral-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-neutral-950 transition-colors shadow-xs">
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* "View All Results" Direct Action Link */}
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    className="w-full mt-3 py-2.5 px-4 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold tracking-wide flex items-center justify-center gap-2 hover:opacity-95 transition-opacity"
+                  >
+                    <span>
+                      {t("search.viewAllResults", "View all results for")} &ldquo;{debouncedQuery}&rdquo;
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : !isBusy ? (
+                /* No Results Found State */
+                <div className="text-center py-8 space-y-2">
+                  <div className="h-12 w-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 mx-auto">
+                    <ShoppingBag className="h-6 w-6" />
+                  </div>
+                  <h4 className="text-sm font-bold text-neutral-900 dark:text-white">
+                    {t("search.noResults", "No products found for")} &ldquo;{debouncedQuery}&rdquo;
+                  </h4>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto">
+                    {t(
+                      "search.noResultsDesc",
+                      "Try searching with broader terms like 'tee', 'hoodie', 'cargos', or 'black'."
+                    )}
+                  </p>
+                </div>
+              ) : (
+                /* Loading Skeleton */
+                <div className="space-y-2 py-2">
+                  {[1, 2, 3].map((n) => (
+                    <div
+                      key={n}
+                      className="flex items-center gap-3 p-2.5 rounded-2xl bg-neutral-100/60 dark:bg-neutral-800/40 animate-pulse"
+                    >
+                      <div className="h-14 w-14 rounded-xl bg-neutral-200 dark:bg-neutral-700" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-20 bg-neutral-200 dark:bg-neutral-700 rounded-md" />
+                        <div className="h-4 w-40 bg-neutral-200 dark:bg-neutral-700 rounded-md" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* CASE 2: Default Suggested Trending Tags */}
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-3">
               <TrendingUp className="h-3.5 w-3.5" />
@@ -154,10 +359,10 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             </div>
           </div>
 
-          {/* Quick Categories */}
+          {/* Popular Categories */}
           <div className="border-t border-neutral-100 dark:border-neutral-800/80 pt-4">
             <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-2.5">
-              {isBn ? "জনপ্রিয় ক্যাটাগরি" : "Popular Categories"}
+              {t("search.popularCategories", "Popular Categories")}
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {popularCategories.map((item) => (
@@ -181,9 +386,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         </div>
 
         {/* Footer info */}
-        <div className="px-5 py-3 bg-neutral-50 dark:bg-neutral-950/40 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
+        <div className="px-5 py-3 bg-neutral-50 dark:bg-neutral-950/40 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500 shrink-0">
           <span>{isBn ? "অনুসন্ধান করতে Enter চাপুন" : "Press Enter to search"}</span>
-          <span>ZEVON BD</span>
+          <span className="flex items-center gap-1">
+            <Sparkles className="h-3 w-3 text-amber-500" />
+            <span>ZEVON Live Catalog</span>
+          </span>
         </div>
       </div>
     </div>

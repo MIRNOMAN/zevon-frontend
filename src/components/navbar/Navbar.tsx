@@ -79,6 +79,10 @@ export function Navbar({
       <MobileDrawer
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
+        onOpenSearch={() => {
+          setIsMobileMenuOpen(false);
+          setIsSearchOpen(true);
+        }}
         wishlistCount={wishlistCount}
       />
 

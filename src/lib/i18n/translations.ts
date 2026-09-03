@@ -175,9 +175,13 @@ export const translations = {
     // ── Search Modal ───────────────────────────────────────────
     search: {
       title: "Search Archive",
-      placeholder: "Search hoodies, t-shirts, cargos, co-ords...",
+      placeholder: "Search collections, apparel, accessories...",
       trending: "Trending Searches",
       recent: "Recent Searches",
+      matchingProducts: "Matching Products",
+      searching: "Searching products...",
+      viewAllResults: "View all results for",
+      popularCategories: "Popular Categories",
       noResults: "No products matched your search",
       noResultsDesc: "Try searching with broader terms like 'tee', 'hoodie', 'cargos', or 'black'.",
       quickBrowse: "Browse Categories",
@@ -415,9 +419,13 @@ export const translations = {
     // ── Search Modal ───────────────────────────────────────────
     search: {
       title: "পণ্য অনুসন্ধান করুন",
-      placeholder: "হুডি, টি-শার্ট, কার্গো, কো-অর্ড খুঁজুন...",
+      placeholder: "পোশাক, টি-শার্ট, প্যান্ট বা কালেকশন খুঁজুন...",
       trending: "জনপ্রিয় অনুসন্ধান",
       recent: "সাম্প্রতিক অনুসন্ধান",
+      matchingProducts: "প্রাসঙ্গিক পণ্যসমূহ",
+      searching: "পণ্য খোঁজা হচ্ছে...",
+      viewAllResults: "সকল ফলাফল দেখুন",
+      popularCategories: "জনপ্রিয় ক্যাটাগরি",
       noResults: "কোনো পণ্য খুঁজে পাওয়া যায়নি",
       noResultsDesc: "অন্য কোনো কি-ওয়ার্ড (যেমন: টি-শার্ট, হুডি, কালো, কার্গো) দিয়ে আবার চেষ্টা করুন।",
       quickBrowse: "ক্যাটাগরি দেখুন",
