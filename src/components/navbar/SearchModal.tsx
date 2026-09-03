@@ -17,7 +17,7 @@ import {
 import { useGetProductsQuery } from "@/redux/api/productApi";
 import { FEATURED_PRODUCTS } from "@/components/home/homeData";
 import type { Product } from "@/features/products";
-import { useTranslation, formatPrice, getCategoryI18nName, toBengaliDigits } from "@/lib/i18n";
+import { useTranslation, useCurrency, getCategoryI18nName, toBengaliDigits } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface SearchModalProps {
@@ -26,7 +26,8 @@ interface SearchModalProps {
 }
 
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
-  const { t, language, isBn } = useTranslation();
+  const { t, isBn } = useTranslation();
+  const { formatPrice } = useCurrency();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -328,11 +329,11 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             </h4>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-xs font-extrabold text-neutral-900 dark:text-white">
-                                {formatPrice(price, language as "en" | "bn")}
+                                {formatPrice(price)}
                               </span>
                               {originalPrice && (
                                 <span className="text-[11px] text-neutral-400 line-through">
-                                  {formatPrice(originalPrice, language as "en" | "bn")}
+                                  {formatPrice(originalPrice)}
                                 </span>
                               )}
                             </div>

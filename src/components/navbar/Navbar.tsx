@@ -9,6 +9,7 @@ import { MobileDrawer } from "./MobileDrawer";
 import { SearchModal } from "./SearchModal";
 import { CartDrawer } from "./CartDrawer";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
@@ -18,9 +19,11 @@ interface NavbarProps {
 
 export function Navbar({
   className,
-  cartCount = 2,
+  cartCount: customCartCount,
 }: NavbarProps) {
   const { wishlistCount } = useWishlist();
+  const { cartCount: liveCartCount } = useCart();
+  const cartCount = customCartCount !== undefined ? customCartCount : liveCartCount;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -66,7 +69,6 @@ export function Navbar({
           {/* ========================================================= */}
           <NavActions
             onOpenSearch={() => setIsSearchOpen(true)}
-            onOpenCart={() => setIsCartOpen(true)}
             wishlistCount={wishlistCount}
             cartCount={cartCount}
           />
@@ -91,11 +93,7 @@ export function Navbar({
         onClose={() => setIsSearchOpen(false)}
       />
 
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cartCount={cartCount}
-      />
+      <CartDrawer />
     </>
   );
 }

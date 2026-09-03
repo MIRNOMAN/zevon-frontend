@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Heart, ShoppingBag, ArrowRight, Camera } from "lucide-react";
 import { UGC_POSTS } from "./homeData";
-import { useTranslation, formatPrice, toBengaliDigits } from "@/lib/i18n";
+import { useTranslation, useCurrency, toBengaliDigits } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const UGC_IMAGES: Record<string, string> = {
@@ -19,7 +19,8 @@ const UGC_IMAGES: Record<string, string> = {
 };
 
 export function ShoppableUGC() {
-  const { t, language, isBn } = useTranslation();
+  const { t, isBn } = useTranslation();
+  const { formatPrice } = useCurrency();
   const [activePin, setActivePin] = useState<string | null>(null);
 
   return (
@@ -101,7 +102,7 @@ export function ShoppableUGC() {
                       </p>
                       <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-neutral-100 dark:border-neutral-800">
                         <span className="text-xs font-extrabold text-neutral-950 dark:text-white">
-                          {formatPrice(post.taggedProduct.price, language as "en" | "bn")}
+                          {formatPrice(post.taggedProduct.price)}
                         </span>
                         <Link
                           href={post.taggedProduct.href}

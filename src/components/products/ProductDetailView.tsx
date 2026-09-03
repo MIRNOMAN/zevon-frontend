@@ -24,13 +24,14 @@ import {
 } from "lucide-react";
 import type { Product, ProductReview } from "@/features/products";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 import {
   useGetProductReviewsQuery,
   useCreateReviewMutation,
 } from "@/redux/api/reviewApi";
 import { useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser, selectIsAuthenticated } from "@/redux/features/authSlice";
-import { useTranslation, formatPrice, toBengaliDigits, getCategoryI18nName } from "@/lib/i18n";
+import { useTranslation, useCurrency, toBengaliDigits, getCategoryI18nName } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { StockAlertModal } from "./StockAlertModal";
@@ -45,6 +46,8 @@ export function ProductDetailView({
   relatedProducts = [],
 }: ProductDetailViewProps) {
   const { t, language, isBn } = useTranslation();
+  const { formatPrice } = useCurrency();
+  const { addToCart, openCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product.id);
 
@@ -170,9 +173,30 @@ export function ProductDetailView({
 
   const displayName = product.title || product.name || "ZEVON Heavyweight Piece";
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (isVariantOutOfStock) return;
     setIsAdded(true);
+    const variantToUse = activeVariant || product.variants?.[0] || {
+      id: product.id,
+      size: selectedSize,
+      color: selectedColor,
+      extraPrice: 0,
+      stock: 50,
+    };
+
+    const variantId = (variantToUse.id || product.id) as string;
+
+    await addToCart({
+      productVariantId: variantId,
+      quantity,
+      product,
+      variant: {
+        ...variantToUse,
+        id: variantId,
+        extraPrice: Number(variantToUse.extraPrice || 0),
+      },
+    });
+
     setTimeout(() => setIsAdded(false), 2000);
   };
 
@@ -348,11 +372,11 @@ export function ProductDetailView({
           {/* Price Box */}
           <div className="flex items-baseline gap-3 p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800">
             <span className="text-3xl font-black text-neutral-950 dark:text-white tracking-tight">
-              {formatPrice(price, language as "en" | "bn")}
+              {formatPrice(price)}
             </span>
             {originalPrice && (
               <span className="text-base text-neutral-400 line-through font-semibold">
-                {formatPrice(originalPrice, language as "en" | "bn")}
+                {formatPrice(originalPrice)}
               </span>
             )}
             <div className="ml-auto flex items-center gap-1.5 text-xs font-bold">

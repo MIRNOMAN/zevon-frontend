@@ -19,7 +19,7 @@ import { useGetProductsQuery } from "@/redux/api/productApi";
 import type { Product as BackendProduct } from "@/features/products";
 import type { Product as HomeProduct } from "@/components/home/homeData";
 import { cn } from "@/lib/utils";
-import { useTranslation, getCategoryI18nName } from "@/lib/i18n";
+import { useTranslation, useCurrency, getCategoryI18nName } from "@/lib/i18n";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useWishlist } from "@/context/WishlistContext";
 
@@ -50,6 +50,7 @@ function StorefrontCatalogContent({
   subCategories = [],
 }: StorefrontCatalogProps) {
   const { t } = useTranslation();
+  const { formatPrice } = useCurrency();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -133,6 +134,8 @@ function StorefrontCatalogContent({
       fit: "Relaxed Boxy",
       description: p.description,
       inStock: p.inStock ?? true,
+      variants: p.variants,
+      rawProduct: p,
     };
 
     setQuickViewProduct(adapted);
@@ -400,11 +403,11 @@ function StorefrontCatalogContent({
                     <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-sm sm:text-base font-extrabold text-neutral-950 dark:text-white">
-                          ৳{(discountPriceNum || basePriceNum).toLocaleString()}
+                          {formatPrice(discountPriceNum || basePriceNum)}
                         </span>
                         {discountPriceNum && (
                           <span className="text-xs text-neutral-400 line-through">
-                            ৳{basePriceNum.toLocaleString()}
+                            {formatPrice(basePriceNum)}
                           </span>
                         )}
                       </div>

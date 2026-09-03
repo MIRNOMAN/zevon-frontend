@@ -12,20 +12,52 @@ import {
   Package,
   Loader2,
 } from "lucide-react";
-import { useWishlist } from "@/context/WishlistContext";
-import { useTranslation, formatPrice, toBengaliDigits } from "@/lib/i18n";
+import { useWishlist, WishlistProductItem } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
+import { useTranslation, useCurrency, toBengaliDigits } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function WishlistView() {
-  const { t, language, isBn } = useTranslation();
+  const { t, isBn } = useTranslation();
+  const { formatPrice } = useCurrency();
   const { wishlistItems, wishlistCount, removeFromWishlist, isMounted, isLoading } = useWishlist();
+  const { addToCart } = useCart();
   const [addedMap, setAddedMap] = useState<Record<string, boolean>>({});
 
-  const handleAddToCart = (id: string) => {
-    setAddedMap((prev) => ({ ...prev, [id]: true }));
+  const handleAddToCart = async (item: WishlistProductItem) => {
+    setAddedMap((prev) => ({ ...prev, [item.id]: true }));
+    const productSlug =
+      item.slug ||
+      (item.title || item.name || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+    await addToCart({
+      productVariantId: item.id,
+      quantity: 1,
+      product: {
+        id: item.id,
+        title: item.title || item.name,
+        name: item.title || item.name,
+        slug: productSlug,
+        basePrice: item.basePrice || item.price,
+        discountPrice: item.discountPrice,
+        category: item.category,
+        primaryImage: item.image ? { url: item.image, altText: item.title, isPrimary: true } : null,
+      },
+      variant: {
+        id: item.id,
+        size: "M",
+        color: "Standard",
+        extraPrice: 0,
+        imageUrl: item.image,
+      },
+    });
+
     setTimeout(() => {
-      setAddedMap((prev) => ({ ...prev, [id]: false }));
+      setAddedMap((prev) => ({ ...prev, [item.id]: false }));
     }, 2000);
   };
 
@@ -164,11 +196,11 @@ export function WishlistView() {
 
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-sm sm:text-base font-black text-neutral-950 dark:text-white">
-                          {formatPrice(price, language as "en" | "bn")}
+                          {formatPrice(price)}
                         </span>
                         {originalPrice && (
                           <span className="text-xs text-neutral-400 line-through font-semibold">
-                            {formatPrice(originalPrice, language as "en" | "bn")}
+                            {formatPrice(originalPrice)}
                           </span>
                         )}
                       </div>
@@ -177,7 +209,7 @@ export function WishlistView() {
                     {/* Add to Bag Action */}
                     <button
                       type="button"
-                      onClick={() => handleAddToCart(item.id)}
+                      onClick={() => handleAddToCart(item)}
                       className={cn(
                         "w-full py-2.5 px-3 rounded-xl text-xs font-bold tracking-wide flex items-center justify-center gap-1.5 transition-all shadow-xs",
                         isAdded

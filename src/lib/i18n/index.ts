@@ -9,4 +9,6 @@ export {
   CATEGORY_NAME_KEYS,
   CATEGORY_DESC_KEYS,
 } from "./helpers";
+export { useCurrency } from "./useCurrency";
 export type { LanguageCode } from "@/redux/features/languageSlice";
+export type { CurrencyCode } from "@/redux/features/currencySlice";

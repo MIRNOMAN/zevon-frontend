@@ -9,11 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/redux/api/categoryApi";
-import { useTranslation, getCategoryI18nName, formatPrice } from "@/lib/i18n";
+import { useTranslation, useCurrency, getCategoryI18nName } from "@/lib/i18n";
 import { useWishlist } from "@/context/WishlistContext";
 
 export function FeaturedNewArrivals() {
-  const { t, language, isBn } = useTranslation();
+  const { t, isBn } = useTranslation();
+  const { formatPrice } = useCurrency();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { data: serverCategories } = useGetCategoriesQuery({ onlyRoot: true });
 
@@ -194,11 +195,11 @@ export function FeaturedNewArrivals() {
                   <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-sm sm:text-base font-extrabold text-neutral-950 dark:text-white">
-                        {formatPrice(product.price, language as "en" | "bn")}
+                        {formatPrice(product.price)}
                       </span>
                       {product.originalPrice && (
                         <span className="text-xs font-medium text-neutral-400 line-through">
-                          {formatPrice(product.originalPrice, language as "en" | "bn")}
+                          {formatPrice(product.originalPrice)}
                         </span>
                       )}
                     </div>

@@ -15,6 +15,8 @@ export interface Product {
   fit?: string;
   description: string;
   inStock: boolean;
+  variants?: any[];
+  rawProduct?: any;
 }
 
 export interface LookbookCategory {

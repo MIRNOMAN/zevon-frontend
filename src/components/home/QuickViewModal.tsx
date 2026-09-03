@@ -5,8 +5,9 @@ import { X, ShoppingBag, Heart, Star, Check, ShieldCheck, Bell } from "lucide-re
 import { Product } from "./homeData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useTranslation, formatPrice } from "@/lib/i18n";
+import { useTranslation, useCurrency } from "@/lib/i18n";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 import { StockAlertModal } from "@/components/products/StockAlertModal";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +24,9 @@ export function QuickViewModal({
   onClose,
   onAddToCart,
 }: QuickViewModalProps) {
-  const { t, language, isBn } = useTranslation();
+  const { t, isBn } = useTranslation();
+  const { formatPrice } = useCurrency();
+  const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>(product?.sizes[0] || "M");
@@ -75,10 +78,48 @@ export function QuickViewModal({
 
   if (!product) return null;
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     setIsAdded(true);
     if (onAddToCart) {
       onAddToCart(product, selectedSize, selectedColor, quantity);
+    } else {
+      const slug =
+        product.rawProduct?.slug ||
+        product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+      const variantsList = product.variants || product.rawProduct?.variants || [];
+      const matchedVariant =
+        variantsList.find(
+          (v: any) =>
+            (!selectedSize || v.size?.toLowerCase() === selectedSize.toLowerCase()) &&
+            (!selectedColor || v.color?.toLowerCase() === selectedColor.toLowerCase())
+        ) ||
+        variantsList.find((v: any) => !selectedSize || v.size?.toLowerCase() === selectedSize.toLowerCase()) ||
+        variantsList[0];
+
+      const variantId = matchedVariant?.id || product.id;
+
+      await addToCart({
+        productVariantId: variantId,
+        quantity,
+        product: {
+          id: product.id,
+          title: product.name,
+          name: product.name,
+          slug,
+          basePrice: product.originalPrice || product.price,
+          discountPrice: product.originalPrice ? product.price : null,
+          category: product.category,
+          primaryImage: { url: product.images[0], altText: product.name, isPrimary: true },
+        },
+        variant: {
+          id: variantId,
+          size: selectedSize,
+          color: selectedColor,
+          extraPrice: matchedVariant ? Number(matchedVariant.extraPrice || 0) : 0,
+          imageUrl: matchedVariant?.imageUrl || product.images[0],
+        },
+      });
     }
     setTimeout(() => {
       setIsAdded(false);
@@ -190,11 +231,11 @@ export function QuickViewModal({
                 </h2>
                 <div className="flex items-center gap-2.5 mt-2">
                   <span className="text-xl font-extrabold text-neutral-950 dark:text-white">
-                    {formatPrice(product.price, language as "en" | "bn")}
+                    {formatPrice(product.price)}
                   </span>
                   {product.originalPrice && (
                     <span className="text-sm font-semibold text-neutral-400 line-through">
-                      {formatPrice(product.originalPrice, language as "en" | "bn")}
+                      {formatPrice(product.originalPrice)}
                     </span>
                   )}
                   {product.originalPrice && (
@@ -306,7 +347,7 @@ export function QuickViewModal({
                   ) : (
                     <>
                       <ShoppingBag className="h-4 w-4" />
-                      {t("home.addToBag", "Add to Bag")} • {formatPrice(product.price, language as "en" | "bn")}
+                      {t("home.addToBag", "Add to Bag")} • {formatPrice(product.price)}
                     </>
                   )}
                 </Button>
