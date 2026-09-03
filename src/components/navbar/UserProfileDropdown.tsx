@@ -13,6 +13,7 @@ import {
   Loader2,
   LogIn,
   UserPlus,
+  Heart,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
@@ -163,6 +164,18 @@ export function UserProfileDropdown() {
                 <ChevronRight className="h-3 w-3 text-neutral-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
               </Link>
             )}
+
+            <Link
+              href="/account/wishlist"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-3 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-200 rounded-xl hover:bg-neutral-100/80 dark:hover:bg-neutral-800/70 transition-colors group"
+            >
+              <div className="flex items-center gap-2.5">
+                <Heart className="h-4 w-4 text-rose-500 transition-colors" />
+                <span>{t("userMenu.wishlist", "My Wishlist")}</span>
+              </div>
+              <ChevronRight className="h-3 w-3 text-neutral-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+            </Link>
 
             <Link
               href="/orders"

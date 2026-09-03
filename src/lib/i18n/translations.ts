@@ -172,6 +172,20 @@ export const translations = {
       color: "Color",
     },
 
+    // ── Wishlist ───────────────────────────────────────────────
+    wishlist: {
+      title: "My Wishlist",
+      subtitle: "Curated streetwear essentials and archive pieces saved for later.",
+      emptyTitle: "Your Wishlist is Empty",
+      emptyDesc: "Save items you love by tapping the heart icon on any product. They'll be saved here for your next drop.",
+      exploreDrops: "Explore New Drops",
+      clearAll: "Clear Wishlist",
+      inStock: "In Stock",
+      soldOut: "Sold Out",
+      moveToBag: "Add to Bag",
+      remove: "Remove",
+    },
+
     // ── Search Modal ───────────────────────────────────────────
     search: {
       title: "Search Archive",
@@ -414,6 +428,20 @@ export const translations = {
       remove: "মুছে ফেলুন",
       size: "সাইজ",
       color: "রং",
+    },
+
+    // ── Wishlist ───────────────────────────────────────────────
+    wishlist: {
+      title: "আমার উইশলিস্ট",
+      subtitle: "আপনার পছন্দের সংরক্ষিত প্রিমিয়াম স্ট্রিটওয়্যার ও ফ্যাশন কালেকশন।",
+      emptyTitle: "আপনার উইশলিস্ট খালি",
+      emptyDesc: "পছন্দের পণ্যগুলো সংরক্ষণ করতে যেকোনো প্রোডাক্ট কার্ডের হার্ট আইকনে ক্লিক করুন।",
+      exploreDrops: "নতুন কালেকশন দেখুন",
+      clearAll: "উইশলিস্ট খালি করুন",
+      inStock: "স্টকে আছে",
+      soldOut: "স্টক শেষ",
+      moveToBag: "ব্যাগে যোগ করুন",
+      remove: "মুছে ফেলুন",
     },
 
     // ── Search Modal ───────────────────────────────────────────
