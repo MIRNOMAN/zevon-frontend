@@ -20,12 +20,14 @@ import {
   AlertCircle,
   X,
   Send,
+  Bell,
 } from "lucide-react";
 import type { Product, ProductReview } from "@/features/products";
 import { useWishlist } from "@/context/WishlistContext";
 import { useTranslation, formatPrice, toBengaliDigits, getCategoryI18nName } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { StockAlertModal } from "./StockAlertModal";
 
 interface ProductDetailViewProps {
   product: Product;
@@ -68,6 +70,7 @@ export function ProductDetailView({
   const [newReviewComment, setNewReviewComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewSubmittedSuccess, setReviewSubmittedSuccess] = useState(false);
+  const [isStockAlertOpen, setIsStockAlertOpen] = useState(false);
 
   // Determine current active variant & its exact stock quantity
   const activeVariant = useMemo(() => {
@@ -427,7 +430,7 @@ export function ProductDetailView({
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl font-bold text-sm transition-all duration-200 shadow-md",
                   isVariantOutOfStock
-                    ? "bg-neutral-300 dark:bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                    ? "bg-neutral-200 dark:bg-neutral-800 text-neutral-500 cursor-not-allowed"
                     : isAdded
                     ? "bg-emerald-600 text-white"
                     : "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:opacity-90 active:scale-[0.98]"
@@ -448,6 +451,22 @@ export function ProductDetailView({
                 )}
               </button>
             </div>
+
+            {/* Back in stock Alert CTA */}
+            {isVariantOutOfStock && (
+              <button
+                type="button"
+                onClick={() => setIsStockAlertOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold hover:bg-amber-500/20 transition-all shadow-xs"
+              >
+                <Bell className="h-4 w-4 text-amber-500 shrink-0" />
+                <span>
+                  {isBn
+                    ? "এই সাইজ স্টকে আসলে নোটিফিকেশন চান? (Notify Me)"
+                    : "Notify Me When Available"}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Guarantees & USPs */}
@@ -693,6 +712,17 @@ export function ProductDetailView({
           </div>
         </div>
       )}
+
+      {/* ── Back-in-Stock Alert Modal ──────────────────────── */}
+      <StockAlertModal
+        isOpen={isStockAlertOpen}
+        onClose={() => setIsStockAlertOpen(false)}
+        productTitle={displayName}
+        productImage={selectedImage}
+        variantId={activeVariant?.id || product.id}
+        selectedColor={selectedColor}
+        selectedSize={selectedSize}
+      />
     </div>
   );
 }

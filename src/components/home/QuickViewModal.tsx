@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, ShoppingBag, Heart, Star, Check, ShieldCheck } from "lucide-react";
+import { X, ShoppingBag, Heart, Star, Check, ShieldCheck, Bell } from "lucide-react";
 import { Product } from "./homeData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTranslation, formatPrice } from "@/lib/i18n";
 import { useWishlist } from "@/context/WishlistContext";
+import { StockAlertModal } from "@/components/products/StockAlertModal";
 import { cn } from "@/lib/utils";
 
 interface QuickViewModalProps {
@@ -29,6 +30,7 @@ export function QuickViewModal({
   const [selectedColor, setSelectedColor] = useState<string>(product?.colors[0]?.name || "");
   const [quantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
+  const [isStockAlertOpen, setIsStockAlertOpen] = useState(false);
 
   const isWishlisted = product ? isInWishlist(product.id) : false;
 
@@ -324,6 +326,17 @@ export function QuickViewModal({
                 </button>
               </div>
 
+              {product.inStock === false && (
+                <button
+                  type="button"
+                  onClick={() => setIsStockAlertOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold hover:bg-amber-500/20 transition-all shadow-xs"
+                >
+                  <Bell className="h-3.5 w-3.5 text-amber-500" />
+                  <span>{isBn ? "স্টক আসলে জানান (Notify Me)" : "Notify Me When Available"}</span>
+                </button>
+              )}
+
               <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-400 dark:text-neutral-500">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
                 <span>
@@ -336,6 +349,17 @@ export function QuickViewModal({
           </div>
         </div>
       </div>
+
+      {/* ── Stock Alert Modal ─────────────────────────── */}
+      <StockAlertModal
+        isOpen={isStockAlertOpen}
+        onClose={() => setIsStockAlertOpen(false)}
+        productTitle={product.name}
+        productImage={product.images[0]}
+        variantId={product.id}
+        selectedColor={selectedColor}
+        selectedSize={selectedSize}
+      />
     </div>
   );
 }
