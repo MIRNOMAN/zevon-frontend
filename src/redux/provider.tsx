@@ -5,6 +5,7 @@ import { Provider } from "react-redux";
 import { makeStore, type AppStore } from "./store";
 import { AuthInitializer } from "@/components/auth/AuthInitializer";
 import { LanguageInitializer } from "@/lib/i18n";
+import { WishlistProvider } from "@/context/WishlistContext";
 
 /**
  * Client-side Redux provider.
@@ -17,7 +18,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <AuthInitializer>
-        <LanguageInitializer>{children}</LanguageInitializer>
+        <LanguageInitializer>
+          <WishlistProvider>{children}</WishlistProvider>
+        </LanguageInitializer>
       </AuthInitializer>
     </Provider>
   );

@@ -10,9 +10,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/redux/api/categoryApi";
 import { useTranslation, getCategoryI18nName, formatPrice } from "@/lib/i18n";
+import { useWishlist } from "@/context/WishlistContext";
 
 export function FeaturedNewArrivals() {
   const { t, language, isBn } = useTranslation();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const { data: serverCategories } = useGetCategoriesQuery({ onlyRoot: true });
 
   const dynamicTabs = React.useMemo(() => {
@@ -38,12 +40,22 @@ export function FeaturedNewArrivals() {
 
   const [activeTab, setActiveTab] = useState("all");
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
-  const [wishlistMap, setWishlistMap] = useState<Record<string, boolean>>({});
 
-  const toggleWishlist = (id: string, e: React.MouseEvent) => {
+  const handleToggleWishlist = (product: Product, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setWishlistMap((prev) => ({ ...prev, [id]: !prev[id] }));
+    const slug = product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    toggleWishlist({
+      id: product.id,
+      title: product.name,
+      name: product.name,
+      slug,
+      price: product.price,
+      basePrice: product.originalPrice || product.price,
+      discountPrice: product.originalPrice ? product.price : null,
+      image: product.images[0],
+      category: product.category,
+    });
   };
 
   const filteredProducts = FEATURED_PRODUCTS.filter((product) => {
@@ -93,7 +105,7 @@ export function FeaturedNewArrivals() {
         {/* Product Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {filteredProducts.map((product) => {
-            const isWishlisted = !!wishlistMap[product.id];
+            const isWishlisted = isInWishlist(product.id);
             return (
               <div
                 key={product.id}
@@ -123,11 +135,16 @@ export function FeaturedNewArrivals() {
                   {/* Wishlist Heart Button */}
                   <button
                     type="button"
-                    onClick={(e) => toggleWishlist(product.id, e)}
+                    onClick={(e) => handleToggleWishlist(product, e)}
                     aria-label="Add to wishlist"
-                    className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md text-neutral-700 dark:text-neutral-300 hover:text-rose-500 transition-colors shadow-xs"
+                    className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md text-neutral-700 dark:text-neutral-300 hover:text-rose-500 transition-colors shadow-xs active:scale-90"
                   >
-                    <Heart className={cn("h-4 w-4 transition-colors", isWishlisted && "fill-rose-500 text-rose-500")} />
+                    <Heart
+                      className={cn(
+                        "h-4 w-4 transition-colors",
+                        isInWishlist(product.id) && "fill-rose-500 text-rose-500 scale-110"
+                      )}
+                    />
                   </button>
 
                   {/* Quick-View Overlay Action */}

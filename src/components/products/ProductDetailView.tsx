@@ -22,6 +22,7 @@ import {
   Send,
 } from "lucide-react";
 import type { Product, ProductReview } from "@/features/products";
+import { useWishlist } from "@/context/WishlistContext";
 import { useTranslation, formatPrice, toBengaliDigits, getCategoryI18nName } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,8 @@ export function ProductDetailView({
   relatedProducts = [],
 }: ProductDetailViewProps) {
   const { t, language, isBn } = useTranslation();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const isWishlisted = isInWishlist(product.id);
 
   // Images setup
   const rawImages: string[] =
@@ -54,7 +57,6 @@ export function ProductDetailView({
   );
   const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   // Review Modal state & live reviews
   const [reviewsList, setReviewsList] = useState<ProductReview[]>(
@@ -205,11 +207,23 @@ export function ProductDetailView({
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
               <button
                 type="button"
-                onClick={() => setIsWishlisted(!isWishlisted)}
+                onClick={() =>
+                  toggleWishlist({
+                    id: product.id,
+                    title: displayName,
+                    name: displayName,
+                    slug: product.slug,
+                    price,
+                    basePrice: product.basePrice,
+                    discountPrice: product.discountPrice,
+                    image: selectedImage,
+                    category: product.category,
+                  })
+                }
                 aria-label="Save to Wishlist"
-                className="h-10 w-10 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:text-rose-600 dark:hover:text-rose-400 transition-colors shadow-md"
+                className="h-10 w-10 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:text-rose-600 dark:hover:text-rose-400 transition-colors shadow-md active:scale-90"
               >
-                <Heart className={cn("h-5 w-5", isWishlisted && "fill-rose-500 text-rose-500")} />
+                <Heart className={cn("h-5 w-5 transition-transform", isWishlisted && "fill-rose-500 text-rose-500 scale-110")} />
               </button>
             </div>
           </div>

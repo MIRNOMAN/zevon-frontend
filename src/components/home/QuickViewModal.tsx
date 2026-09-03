@@ -6,6 +6,7 @@ import { Product } from "./homeData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTranslation, formatPrice } from "@/lib/i18n";
+import { useWishlist } from "@/context/WishlistContext";
 import { cn } from "@/lib/utils";
 
 interface QuickViewModalProps {
@@ -22,12 +23,30 @@ export function QuickViewModal({
   onAddToCart,
 }: QuickViewModalProps) {
   const { t, language, isBn } = useTranslation();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>(product?.sizes[0] || "M");
   const [selectedColor, setSelectedColor] = useState<string>(product?.colors[0]?.name || "");
   const [quantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+
+  const isWishlisted = product ? isInWishlist(product.id) : false;
+
+  const handleToggleWishlist = () => {
+    if (!product) return;
+    const slug = product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    toggleWishlist({
+      id: product.id,
+      title: product.name,
+      name: product.name,
+      slug,
+      price: product.price,
+      basePrice: product.originalPrice || product.price,
+      discountPrice: product.originalPrice ? product.price : null,
+      image: product.images[0],
+      category: product.category,
+    });
+  };
 
   // Lock background scroll
   useEffect(() => {
@@ -292,16 +311,16 @@ export function QuickViewModal({
 
                 <button
                   type="button"
-                  onClick={() => setIsWishlisted(!isWishlisted)}
+                  onClick={handleToggleWishlist}
                   aria-label="Wishlist toggle"
                   className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-xl border transition-colors",
+                    "flex h-12 w-12 items-center justify-center rounded-xl border transition-colors active:scale-90",
                     isWishlisted
                       ? "border-rose-500 bg-rose-50 dark:bg-rose-950/30 text-rose-500"
                       : "border-neutral-200 dark:border-neutral-700 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
                   )}
                 >
-                  <Heart className={cn("h-5 w-5", isWishlisted && "fill-rose-500")} />
+                  <Heart className={cn("h-5 w-5 transition-transform", isWishlisted && "fill-rose-500 scale-110")} />
                 </button>
               </div>
 

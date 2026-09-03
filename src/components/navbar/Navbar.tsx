@@ -8,19 +8,19 @@ import { NavActions } from "./NavActions";
 import { MobileDrawer } from "./MobileDrawer";
 import { SearchModal } from "./SearchModal";
 import { CartDrawer } from "./CartDrawer";
+import { useWishlist } from "@/context/WishlistContext";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   className?: string;
-  wishlistCount?: number;
   cartCount?: number;
 }
 
 export function Navbar({
   className,
-  wishlistCount = 2,
   cartCount = 2,
 }: NavbarProps) {
+  const { wishlistCount } = useWishlist();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
