@@ -1,5 +1,6 @@
 export { translations } from "./translations";
 export { useTranslation } from "./useTranslation";
+export { LanguageInitializer } from "./LanguageInitializer";
 export {
   getCategoryI18nName,
   getCategoryI18nDesc,
