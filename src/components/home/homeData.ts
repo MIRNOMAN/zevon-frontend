@@ -247,7 +247,7 @@ export const UGC_POSTS: UGCPost[] = [
     taggedProduct: {
       name: "Architectural Heavyweight Tee",
       price: 1850,
-      href: "/shop/men/t-shirts",
+      href: "/products/architectural-minimalist-heavyweight-tee",
       x: 48,
       y: 42,
     },
@@ -261,7 +261,7 @@ export const UGC_POSTS: UGCPost[] = [
     taggedProduct: {
       name: "Ribbed Knit Co-ord Set",
       price: 3200,
-      href: "/shop/women/dresses",
+      href: "/products/ribbed-knit-crop-top-and-trouser-co-ord",
       x: 52,
       y: 50,
     },
@@ -275,7 +275,7 @@ export const UGC_POSTS: UGCPost[] = [
     taggedProduct: {
       name: "French Terry Hoodie",
       price: 3450,
-      href: "/shop/men/outerwear",
+      href: "/products/heavy-french-terry-oversized-hoodie",
       x: 45,
       y: 38,
     },
@@ -289,7 +289,7 @@ export const UGC_POSTS: UGCPost[] = [
     taggedProduct: {
       name: "Pleated Wide-Leg Trousers",
       price: 2850,
-      href: "/shop/women/bottoms",
+      href: "/products/pleated-wide-leg-tonal-trousers",
       x: 55,
       y: 65,
     },
