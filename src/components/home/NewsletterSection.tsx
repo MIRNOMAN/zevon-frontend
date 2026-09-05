@@ -1,25 +1,50 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mail, CheckCircle2, ArrowRight, Sparkles, Copy, Check } from "lucide-react";
+import { Mail, CheckCircle2, ArrowRight, Sparkles, Copy, Check, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
+import { useSubscribeNewsletterMutation } from "@/redux/api/contactApi";
 
 export function NewsletterSection() {
   const { t, isBn } = useTranslation();
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState("ZEVON10");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [subscribeNewsletter, { isLoading }] = useSubscribeNewsletterMutation();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && email.includes("@")) {
+    setErrorMessage(null);
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !trimmedEmail.includes("@")) {
+      setErrorMessage(isBn ? "অনুগ্রহ করে সঠিক ইমেইল প্রদান করুন।" : "Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      const res = await subscribeNewsletter({ email: trimmedEmail }).unwrap();
+      if (res?.data?.promoCode) {
+        setPromoCode(res.data.promoCode);
+      }
       setIsSubscribed(true);
+    } catch (err: any) {
+      console.error("Newsletter subscribe error:", err);
+      const msg = err?.data?.message;
+      const displayMsg = Array.isArray(msg) ? msg.join(", ") : msg;
+      setErrorMessage(
+        displayMsg ||
+          (isBn ? "সাবস্ক্রিপশন ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।" : "Failed to subscribe. Please try again.")
+      );
     }
   };
 
   const copyCode = () => {
-    navigator.clipboard.writeText("ZEVON10");
+    navigator.clipboard.writeText(promoCode);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
@@ -59,7 +84,7 @@ export function NewsletterSection() {
                 </p>
                 <div className="inline-flex items-center gap-3 bg-black/60 px-4 py-2 rounded-xl border border-white/20">
                   <span className="font-mono text-base font-black text-amber-400 tracking-wider">
-                    ZEVON10
+                    {promoCode}
                   </span>
                   <button
                     type="button"
@@ -72,32 +97,48 @@ export function NewsletterSection() {
                 </div>
               </div>
             ) : (
-              <form
-                onSubmit={handleSubmit}
-                className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto pt-2"
-              >
-                <div className="relative flex-1">
-                  <Mail className="h-5 w-5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    required
-                    suppressHydrationWarning
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t("newsletter.placeholder", "Enter your email address...")}
-                    style={{ outline: "none", boxShadow: "none" }}
-                    className="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-3 pl-11 text-sm text-white placeholder:text-neutral-400 focus:border-white focus:outline-none transition-colors"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="bg-white text-neutral-950 hover:bg-neutral-200 font-bold tracking-wide shrink-0 gap-2"
+              <div className="space-y-3 max-w-md mx-auto pt-2">
+                {errorMessage && (
+                  <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-200 text-xs font-medium flex items-center justify-center gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+                <form
+                  onSubmit={handleSubmit}
+                  className="flex flex-col sm:flex-row gap-3"
                 >
-                  {t("newsletter.button", "Join Club")}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </form>
+                  <div className="relative flex-1">
+                    <Mail className="h-5 w-5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      disabled={isLoading}
+                      suppressHydrationWarning
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={t("newsletter.placeholder", "Enter your email address...")}
+                      style={{ outline: "none", boxShadow: "none" }}
+                      className="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-3 pl-11 text-sm text-white placeholder:text-neutral-400 focus:border-white focus:outline-none transition-colors disabled:opacity-50"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={isLoading}
+                    className="bg-white text-neutral-950 hover:bg-neutral-200 font-bold tracking-wide shrink-0 gap-2 disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        {t("newsletter.button", "Join Archive")}
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </div>
             )}
 
             <p className="text-[11px] text-neutral-500">
