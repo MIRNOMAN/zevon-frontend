@@ -1,5 +1,6 @@
 import React from "react";
 import { HeroBanner } from "@/components/home/HeroBanner";
+import { FlashSaleSection } from "@/components/home/FlashSaleSection";
 import { CategoryLookbook } from "@/components/home/CategoryLookbook";
 import { FeaturedNewArrivals } from "@/components/home/FeaturedNewArrivals";
 import { BrandStoryUSPs } from "@/components/home/BrandStoryUSPs";
@@ -18,19 +19,22 @@ export default function HomePage() {
       {/* 1. Hero Banner with Parallax Ambient Glow and Floating Badges */}
       <HeroBanner />
 
-      {/* 2. Category Grid / Lookbook with Hover Micro-Interactions */}
+      {/* 2. Live Flash Sale & Tiered Deal Campaign with Countdown Timer */}
+      <FlashSaleSection />
+
+      {/* 3. Category Grid / Lookbook with Hover Micro-Interactions */}
       <CategoryLookbook />
 
-      {/* 3. Featured / New Arrivals Tabbed Product Slider with Quick View */}
+      {/* 4. Featured / New Arrivals Tabbed Product Slider with Quick View */}
       <FeaturedNewArrivals />
 
-      {/* 4. Brand Story & Value Propositions Grid */}
+      {/* 5. Brand Story & Value Propositions Grid */}
       <BrandStoryUSPs />
 
-      {/* 5. Social Proof / UGC Shoppable Instagram Hotspot Feed */}
+      {/* 6. Social Proof / UGC Shoppable Instagram Hotspot Feed */}
       <ShoppableUGC />
 
-      {/* 6. VIP Newsletter Capture with Promo Code Unlock */}
+      {/* 7. VIP Newsletter Capture with Promo Code Unlock */}
       <NewsletterSection />
     </div>
   );
