@@ -29,6 +29,12 @@ import {
   useGetProductReviewsQuery,
   useCreateReviewMutation,
 } from "@/redux/api/reviewApi";
+import {
+  useTrackProductViewMutation,
+  useGetYouMayAlsoLikeQuery,
+  useGetRecentlyViewedQuery,
+  RecommendationProduct,
+} from "@/redux/api/recommendationApi";
 import { useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser, selectIsAuthenticated } from "@/redux/features/authSlice";
 import { useTranslation, useCurrency, toBengaliDigits, getCategoryI18nName } from "@/lib/i18n";
@@ -78,6 +84,24 @@ export function ProductDetailView({
     { skip: !product.id && !product.slug }
   );
   const [createReviewMutation] = useCreateReviewMutation();
+
+  // Smart Recommendations & Browsing History Tracking
+  const [trackView] = useTrackProductViewMutation();
+  const { data: recommendationsRes } = useGetYouMayAlsoLikeQuery(
+    { productId: product.id, limit: 4 },
+    { skip: !product.id }
+  );
+  const { data: recentlyViewedRes } = useGetRecentlyViewedQuery(
+    { limit: 4 },
+    { skip: !product.id }
+  );
+
+  // Track product view in background on mount
+  useEffect(() => {
+    if (product.id) {
+      trackView({ productId: product.id }).catch(() => {});
+    }
+  }, [product.id, trackView]);
 
   const [selectedStarFilter, setSelectedStarFilter] = useState<number | null>(null);
 
@@ -922,6 +946,142 @@ export function ProductDetailView({
             )}
           </div>
         </div>
+      )}
+
+      {/* ── Dynamic "You May Also Like" Recommendations ────────────── */}
+      {recommendationsRes?.data && recommendationsRes.data.length > 0 && (
+        <section className="mt-16 sm:mt-24 pt-12 border-t border-neutral-200 dark:border-neutral-800 animate-fade-in-up">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                <span>{isBn ? "স্মার্ট রিকমেন্ডেশন" : "Curated for You"}</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-950 dark:text-white mt-1">
+                {isBn ? "আপনার জন্য বিশেষ পছন্দ (You May Also Like)" : "Complete The Atelier Fit"}
+              </h2>
+            </div>
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-1 text-xs font-bold text-neutral-900 dark:text-white hover:underline underline-offset-4"
+            >
+              <span>{isBn ? "সব কালেকশন দেখুন" : "View Full Catalog"}</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            {recommendationsRes.data.map((rec) => {
+              const recImg =
+                rec.primaryImage ||
+                rec.images?.[0]?.url ||
+                "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=900&auto=format&fit=crop&q=80";
+              const recPrice = rec.discountPrice || rec.basePrice;
+              return (
+                <Link
+                  key={rec.id}
+                  href={`/products/${rec.slug || rec.id}`}
+                  className="group rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 overflow-hidden shadow-xs hover-card-lift transition-all flex flex-col justify-between"
+                >
+                  <div className="relative aspect-3/4 w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+                    <img
+                      src={recImg}
+                      alt={rec.title}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    {rec.discountPrice && (
+                      <Badge className="absolute top-2.5 left-2.5 bg-rose-600 text-white font-extrabold text-[10px] px-2 py-0.5">
+                        SALE
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="p-4 space-y-1.5 flex-1 flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block truncate">
+                        {rec.category?.name || "ZEVON Atelier"}
+                      </span>
+                      <h3 className="text-xs sm:text-sm font-bold text-neutral-950 dark:text-white group-hover:text-emerald-500 transition-colors line-clamp-1">
+                        {rec.title}
+                      </h3>
+                    </div>
+                    <div className="flex items-baseline gap-2 pt-1">
+                      <span className="text-xs sm:text-sm font-black text-neutral-950 dark:text-white">
+                        {formatPrice(recPrice)}
+                      </span>
+                      {rec.discountPrice && (
+                        <span className="text-[11px] text-neutral-400 line-through">
+                          {formatPrice(rec.basePrice)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ── Dynamic "Recently Viewed" Products ────────────── */}
+      {recentlyViewedRes?.data?.items && recentlyViewedRes.data.items.length > 0 && (
+        <section className="mt-16 sm:mt-24 pt-12 border-t border-neutral-200 dark:border-neutral-800 animate-fade-in-up">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                <ShoppingBag className="h-3.5 w-3.5" />
+                <span>{isBn ? "ব্রাউজিং হিস্ট্রি" : "Browsing History"}</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-950 dark:text-white mt-1">
+                {isBn ? "সম্প্রতি আপনি দেখেছেন (Recently Viewed)" : "Recently Viewed Pieces"}
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            {recentlyViewedRes.data.items.map((item) => {
+              const itemImg =
+                item.primaryImage ||
+                item.images?.[0]?.url ||
+                "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=900&auto=format&fit=crop&q=80";
+              const itemPrice = item.discountPrice || item.basePrice;
+              return (
+                <Link
+                  key={item.id}
+                  href={`/products/${item.slug || item.id}`}
+                  className="group rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 overflow-hidden shadow-xs hover-card-lift transition-all flex flex-col justify-between"
+                >
+                  <div className="relative aspect-3/4 w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+                    <img
+                      src={itemImg}
+                      alt={item.title}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="p-4 space-y-1.5 flex-1 flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block truncate">
+                        {item.category?.name || "Streetwear"}
+                      </span>
+                      <h3 className="text-xs sm:text-sm font-bold text-neutral-950 dark:text-white group-hover:text-emerald-500 transition-colors line-clamp-1">
+                        {item.title}
+                      </h3>
+                    </div>
+                    <div className="flex items-baseline gap-2 pt-1">
+                      <span className="text-xs sm:text-sm font-black text-neutral-950 dark:text-white">
+                        {formatPrice(itemPrice)}
+                      </span>
+                      {item.discountPrice && (
+                        <span className="text-[11px] text-neutral-400 line-through">
+                          {formatPrice(item.basePrice)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* ── Back-in-Stock Alert Modal ──────────────────────── */}

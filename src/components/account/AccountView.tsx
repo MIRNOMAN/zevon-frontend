@@ -55,8 +55,11 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useTranslation, toBengaliDigits } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Gift, RotateCcw } from "lucide-react";
+import { ReferralTab } from "./ReferralTab";
+import { ReturnsTab } from "./ReturnsTab";
 
-type ActiveTab = "addresses" | "profile" | "security";
+type ActiveTab = "addresses" | "profile" | "security" | "referrals" | "returns";
 
 export function AccountView() {
   const { t, isBn } = useTranslation();
@@ -545,6 +548,34 @@ export function AccountView() {
 
           <button
             type="button"
+            onClick={() => setActiveTab("referrals")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0",
+              activeTab === "referrals"
+                ? "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-md"
+                : "bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+            )}
+          >
+            <Gift className="h-4 w-4 text-amber-500" />
+            <span>{isBn ? "রেফারেল ও রিওয়ার্ড" : "Referrals (৳500)"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("returns")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0",
+              activeTab === "returns"
+                ? "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-md"
+                : "bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+            )}
+          >
+            <RotateCcw className="h-4 w-4" />
+            <span>{isBn ? "রিটার্ন ও এক্সচেঞ্জ" : "Returns & Exchanges"}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab("security")}
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0",
@@ -972,6 +1003,16 @@ export function AccountView() {
             </form>
           </div>
         )}
+
+        {/* ========================================================= */}
+        {/* TAB 4: REFERRAL & REWARDS (৳500)                          */}
+        {/* ========================================================= */}
+        {activeTab === "referrals" && <ReferralTab />}
+
+        {/* ========================================================= */}
+        {/* TAB 5: RETURNS & EXCHANGES                                */}
+        {/* ========================================================= */}
+        {activeTab === "returns" && <ReturnsTab />}
       </div>
 
       {/* ── Add / Edit Address Modal ── */}

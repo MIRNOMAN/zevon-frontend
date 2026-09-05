@@ -15,29 +15,58 @@ import {
   MessageSquare,
   Clock,
   ExternalLink,
+  Search,
+  Loader2,
+  AlertCircle,
+  Package,
+  Check,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import { useTrackReturnMutation, TrackReturnResponse } from "@/redux/api/returnApi";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export function ReturnsView() {
   const { t, isBn } = useTranslation();
 
-  const [orderNumber, setOrderNumber] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [inquirySent, setInquirySent] = useState(false);
+  const [returnReference, setReturnReference] = useState("");
+  const [emailOrPhone, setEmailOrPhone] = useState("");
+  const [trackError, setTrackError] = useState<string | null>(null);
+  const [trackResult, setTrackResult] = useState<TrackReturnResponse | null>(null);
 
-  const handleQuickInitiate = (e: React.FormEvent) => {
+  const [trackReturn, { isLoading: isTracking }] = useTrackReturnMutation();
+
+  const handleTrackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!orderNumber.trim()) return;
-    setInquirySent(true);
-    setTimeout(() => {
-      // Redirect to WhatsApp or Account Orders
-      const waMsg = encodeURIComponent(
-        `Hello ZEVON Concierge, I would like to request an exchange/return for Order #${orderNumber} (Phone: ${phoneNumber}).`
+    setTrackError(null);
+    setTrackResult(null);
+
+    if (!returnReference.trim() || !emailOrPhone.trim()) {
+      setTrackError(
+        isBn
+          ? "অনুগ্রহ করে রিটার্ন রেফারেন্স এবং ফোন/ইমেইল উভয় ফিল্ড পূরণ করুন।"
+          : "Please enter both your return reference number and phone or email."
       );
-      window.open(`https://wa.me/8801700000000?text=${waMsg}`, "_blank");
-      setInquirySent(false);
-    }, 1200);
+      return;
+    }
+
+    try {
+      const res = await trackReturn({
+        returnReference: returnReference.trim(),
+        emailOrPhone: emailOrPhone.trim(),
+      }).unwrap();
+
+      if (res?.data) {
+        setTrackResult(res.data);
+      }
+    } catch (err: any) {
+      setTrackError(
+        err?.data?.message ||
+          (isBn
+            ? "রিটার্ন ট্র্যাকিং তথ্য খুঁজে পাওয়া যায়নি। অনুগ্রহ করে রেফারেন্স নম্বর যাচাই করুন।"
+            : "Return reference not found. Please check your reference ID and email/phone.")
+      );
+    }
   };
 
   const steps = [
@@ -255,67 +284,153 @@ export function ReturnsView() {
           </div>
         </div>
 
-        {/* ── Quick Return Form & FAQ ── */}
+        {/* ── Live Return Tracking & FAQ ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 mb-16 items-start">
-          {/* Quick Request Box (5 Cols) */}
+          {/* Live Track Return Box (5 Cols) */}
           <div className="lg:col-span-5">
             <div className="rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-6 sm:p-8 shadow-lg space-y-6">
-              <div>
-                <h3 className="text-base sm:text-lg font-black text-neutral-950 dark:text-white">
-                  {isBn ? "দ্রুত রিটার্ন বা এক্সচেঞ্জ শুরু করুন" : "Instant Exchange Concierge"}
-                </h3>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                  {isBn
-                    ? "অর্ডার আইডি ও ফোন নম্বর দিন, আমাদের টিম সাথে সাথে ব্যবস্থা নেবে।"
-                    : "Enter your order reference to initiate immediate atelier assistance."}
-                </p>
-              </div>
-
-              {inquirySent ? (
-                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-center space-y-1 text-emerald-800 dark:text-emerald-300 animate-in fade-in">
-                  <CheckCircle2 className="h-6 w-6 mx-auto text-emerald-500" />
-                  <p className="font-bold text-xs">
-                    {isBn ? "হোয়াটসঅ্যাপে পাঠানো হচ্ছে..." : "Connecting to WhatsApp Concierge..."}
+              <div className="flex items-center gap-3 border-b border-neutral-100 dark:border-neutral-800 pb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white">
+                  <Search className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-neutral-950 dark:text-white">
+                    {isBn ? "লাইভ রিটার্ন ট্র্যাকিং" : "Track Return Progress"}
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {isBn ? "রেফারেন্স ও ফোন নম্বর দিন" : "Enter reference & phone/email"}
                   </p>
                 </div>
-              ) : (
-                <form onSubmit={handleQuickInitiate} className="space-y-4">
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block mb-1">
-                      {isBn ? "অর্ডার আইডি / ইনভয়েস নম্বর *" : "Order Reference / ID *"}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={orderNumber}
-                      onChange={(e) => setOrderNumber(e.target.value)}
-                      placeholder="e.g. ZEV-1082"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-950 dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-400"
-                    />
+              </div>
+
+              {trackError && (
+                <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{trackError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleTrackSubmit} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    {isBn ? "রিটার্ন রেফারেন্স নম্বর *" : "Return Reference ID *"}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={returnReference}
+                    onChange={(e) => setReturnReference(e.target.value)}
+                    placeholder="e.g. RET-20260901-4821"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-950 dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-400 uppercase tracking-wider"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    {isBn ? "ফোন নম্বর অথবা ইমেইল *" : "Contact Phone / Email *"}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={emailOrPhone}
+                    onChange={(e) => setEmailOrPhone(e.target.value)}
+                    placeholder="e.g. 01700000000 or you@mail.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-950 dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isTracking}
+                  className="w-full py-2.5 rounded-xl bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 font-bold text-xs hover:opacity-90 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {isTracking ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                  <span>{isTracking ? (isBn ? "ট্র্যাক করা হচ্ছে..." : "Tracking...") : (isBn ? "স্ট্যাটাস দেখুন" : "Track Return")}</span>
+                </Button>
+              </form>
+
+              {/* Live Tracking Result Details */}
+              {trackResult && (
+                <div className="p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 space-y-4 animate-in fade-in">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] uppercase font-black text-neutral-400">
+                        {trackResult.returnReference}
+                      </span>
+                      <h4 className="font-bold text-sm text-neutral-950 dark:text-white">
+                        {trackResult.item?.productTitle || "ZEVON Garment Piece"}
+                      </h4>
+                      <p className="text-[11px] text-neutral-500">
+                        {isBn ? "অর্ডার #" : "Order #"}: {trackResult.orderNumber}
+                      </p>
+                    </div>
+                    <Badge
+                      className={
+                        trackResult.status === "COMPLETED"
+                          ? "bg-emerald-500 text-white"
+                          : trackResult.status === "REJECTED"
+                          ? "bg-rose-500 text-white"
+                          : "bg-amber-500 text-white"
+                      }
+                    >
+                      {trackResult.status}
+                    </Badge>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block mb-1">
-                      {isBn ? "ফোন নম্বর *" : "Phone Number *"}
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="01XXXXXXXXX"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-950 dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-400"
-                    />
-                  </div>
+                  {/* Stepper */}
+                  {trackResult.stepper && (
+                    <div className="space-y-3 pt-2 border-t border-neutral-200 dark:border-neutral-700">
+                      {trackResult.stepper.map((step, sIdx) => (
+                        <div key={sIdx} className="flex items-start gap-3">
+                          <div
+                            className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                              step.completed
+                                ? "bg-emerald-500 text-white"
+                                : step.current
+                                ? "bg-amber-500 text-white animate-pulse"
+                                : "bg-neutral-200 dark:bg-neutral-700 text-neutral-400"
+                            }`}
+                          >
+                            {step.completed ? (
+                              <Check className="h-3 w-3" />
+                            ) : (
+                              <span className="text-[9px] font-bold">{sIdx + 1}</span>
+                            )}
+                          </div>
+                          <div className="text-xs">
+                            <span
+                              className={`font-bold block ${
+                                step.completed || step.current
+                                  ? "text-neutral-950 dark:text-white"
+                                  : "text-neutral-400"
+                              }`}
+                            >
+                              {step.title}
+                            </span>
+                            {step.description && (
+                              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                                {step.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                  <Button
-                    type="submit"
-                    className="w-full py-2.5 rounded-xl bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 font-bold text-xs hover:opacity-90 transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    <span>{isBn ? "হোয়াটসঅ্যাপে রিকোয়েস্ট পাঠান" : "Connect with Support"}</span>
-                  </Button>
-                </form>
+                  {trackResult.trackingNumber && (
+                    <div className="pt-2 text-xs text-neutral-600 dark:text-neutral-400 flex items-center justify-between">
+                      <span>{isBn ? "কুরিয়ার ট্র্যাকিং:" : "Courier Tracking:"}</span>
+                      <span className="font-mono font-bold text-neutral-950 dark:text-white">
+                        {trackResult.trackingNumber} ({trackResult.courierName || "Courier"})
+                      </span>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
