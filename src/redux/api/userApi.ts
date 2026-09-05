@@ -69,6 +69,23 @@ export const userApi = baseApi.injectEndpoints({
       },
     }),
 
+    uploadAvatar: builder.mutation<ApiResponse<{ avatarUrl: string; user: UserProfile }>, FormData>({
+      query: (formData) => ({
+        url: "/users/avatar",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["User", "Auth"],
+      async onQueryStarted(_args, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          if (data?.data?.user) {
+            dispatch(setUser(data.data.user as any));
+          }
+        } catch {}
+      },
+    }),
+
     changePassword: builder.mutation<ApiResponse<{ message: string }>, ChangePasswordInput>({
       query: (body) => ({
         url: "/users/change-password",
@@ -82,5 +99,6 @@ export const userApi = baseApi.injectEndpoints({
 export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
+  useUploadAvatarMutation,
   useChangePasswordMutation,
 } = userApi;

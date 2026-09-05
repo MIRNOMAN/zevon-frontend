@@ -20,6 +20,8 @@ export interface User {
   phone?: string | null;
   role: UserRole;
   avatarUrl?: string | null;
+  referralCode?: string | null;
+  isActive?: boolean;
   createdAt?: string | Date;
 }
 

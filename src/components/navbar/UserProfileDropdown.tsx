@@ -25,6 +25,8 @@ import { useLogoutMutation } from "@/redux/api/authApi";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
+import { getAvatarUrl } from "@/lib/avatar";
+
 export function UserProfileDropdown() {
   const { t, isBn } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -67,6 +69,8 @@ export function UserProfileDropdown() {
   const initial = displayName.charAt(0).toUpperCase();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
 
+  const avatarSrc = getAvatarUrl(user?.avatarUrl);
+
   return (
     <div className="relative" ref={containerRef}>
       <button
@@ -82,9 +86,17 @@ export function UserProfileDropdown() {
         )}
       >
         {isAuthenticated && user ? (
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-xs font-bold ring-1 ring-neutral-300 dark:ring-neutral-700">
-            {initial}
-          </div>
+          avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt={displayName}
+              className="h-7 w-7 rounded-full object-cover ring-1 ring-neutral-300 dark:ring-neutral-700"
+            />
+          ) : (
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-xs font-bold ring-1 ring-neutral-300 dark:ring-neutral-700">
+              {initial}
+            </div>
+          )
         ) : (
           <UserIcon className="h-4 w-4" />
         )}
@@ -97,9 +109,17 @@ export function UserProfileDropdown() {
           {isAuthenticated && user ? (
             <div className="px-3 py-3 mb-1.5 border-b border-neutral-100 dark:border-neutral-800/80">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-neutral-800 to-neutral-950 text-white dark:from-neutral-100 dark:to-neutral-300 dark:text-neutral-950 text-sm font-black uppercase tracking-wider shadow-xs">
-                  {initial}
-                </div>
+                {avatarSrc ? (
+                  <img
+                    src={avatarSrc}
+                    alt={displayName}
+                    className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-neutral-200 dark:ring-neutral-700 shadow-xs"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-neutral-800 to-neutral-950 text-white dark:from-neutral-100 dark:to-neutral-300 dark:text-neutral-950 text-sm font-black uppercase tracking-wider shadow-xs">
+                    {initial}
+                  </div>
+                )}
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-neutral-900 dark:text-white truncate">

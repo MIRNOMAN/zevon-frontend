@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { MyOrdersView } from "@/components/orders/MyOrdersView";
+import { AccountView } from "@/components/account/AccountView";
 
 export const metadata: Metadata = {
-  title: "My Account | ZEVON",
-  description: "Manage your ZEVON account, streetwear orders, tracking, and wishlist.",
+  title: "Account & Addresses | ZEVON",
+  description: "Manage your ZEVON account profile, saved delivery addresses, security settings, and streetwear orders.",
 };
 
 export default function AccountPage() {
-  return <MyOrdersView />;
+  return <AccountView />;
 }
