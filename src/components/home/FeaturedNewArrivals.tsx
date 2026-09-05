@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { Heart, Eye, ShoppingBag, ArrowRight, Sparkles } from "lucide-react";
 import { FEATURED_PRODUCTS, Product } from "./homeData";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/redux/api/categoryApi";
+import { useGetProductsQuery } from "@/redux/api/productApi";
 import { useTranslation, useCurrency, getCategoryI18nName } from "@/lib/i18n";
 import { useWishlist } from "@/context/WishlistContext";
 
@@ -17,8 +18,9 @@ export function FeaturedNewArrivals() {
   const { formatPrice } = useCurrency();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { data: serverCategories } = useGetCategoriesQuery({ onlyRoot: true });
+  const { data: serverProductsData } = useGetProductsQuery({ limit: 12 });
 
-  const dynamicTabs = React.useMemo(() => {
+  const dynamicTabs = useMemo(() => {
     if (!serverCategories || serverCategories.length === 0) {
       return [
         { id: "all", label: t("home.allDropsTab", "All Drops") },
@@ -42,10 +44,84 @@ export function FeaturedNewArrivals() {
   const [activeTab, setActiveTab] = useState("all");
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
+  // Map server products or fallback to FEATURED_PRODUCTS
+  const displayProducts: Product[] = useMemo(() => {
+    if (serverProductsData?.products && serverProductsData.products.length > 0) {
+      return serverProductsData.products.map((p) => {
+        const primaryImgUrl =
+          typeof p.primaryImage === "object" && p.primaryImage?.url
+            ? p.primaryImage.url
+            : typeof p.images?.[0] === "object" && (p.images[0] as any)?.url
+            ? (p.images[0] as any).url
+            : typeof p.images?.[0] === "string"
+            ? p.images[0]
+            : "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80";
+
+        const allImages =
+          Array.isArray(p.images) && p.images.length > 0
+            ? p.images.map((img: any) =>
+                typeof img === "string" ? img : img?.url || primaryImgUrl
+              )
+            : [primaryImgUrl];
+
+        const priceNum =
+          typeof p.price === "number"
+            ? p.price
+            : Number(p.discountPrice || p.basePrice || 0);
+        const originalPriceNum = p.discountPrice
+          ? Number(p.basePrice || p.price)
+          : undefined;
+        const catSlug =
+          typeof p.category === "object"
+            ? p.category?.slug
+            : String(p.category || "men");
+
+        return {
+          id: p.id,
+          name: p.title || (p as any).name || "ZEVON Piece",
+          category: (catSlug === "women"
+            ? "women"
+            : catSlug === "accessories"
+            ? "accessories"
+            : "men") as any,
+          subcategory:
+            typeof p.category === "object"
+              ? p.category?.name || "Apparel"
+              : "Apparel",
+          price: priceNum,
+          originalPrice: originalPriceNum,
+          rating: 4.9,
+          reviewsCount: 24,
+          badge: p.discountPrice ? "SALE" : p.isFeatured ? "HOT" : "NEW",
+          images: allImages,
+          colors: [
+            { name: "Onyx Black", hex: "#1c1917" },
+            { name: "Off White", hex: "#f5f5f4" },
+          ],
+          sizes: ["S", "M", "L", "XL"],
+          gsm: (p as any).fabricSpecs || "380 GSM",
+          fit: "Oversized Boxy Fit",
+          description:
+            p.description ||
+            "Premium streetwear garment crafted with heavyweight organic cotton.",
+          inStock: (p.totalStock ?? 10) > 0,
+          rawProduct: p,
+        };
+      });
+    }
+    return FEATURED_PRODUCTS;
+  }, [serverProductsData]);
+
   const handleToggleWishlist = (product: Product, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const slug = product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const slug =
+      product.rawProduct?.slug ||
+      product.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
     toggleWishlist({
       id: product.id,
       title: product.name,
@@ -59,9 +135,10 @@ export function FeaturedNewArrivals() {
     });
   };
 
-  const filteredProducts = FEATURED_PRODUCTS.filter((product) => {
+  const filteredProducts = displayProducts.filter((product) => {
     if (activeTab === "all") return true;
-    if (activeTab === "sale") return product.originalPrice !== undefined || product.badge === "SALE";
+    if (activeTab === "sale")
+      return product.originalPrice !== undefined || product.badge === "SALE";
     return product.category === activeTab;
   });
 
@@ -106,7 +183,16 @@ export function FeaturedNewArrivals() {
         {/* Product Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {filteredProducts.map((product) => {
-            const isWishlisted = isInWishlist(product.id);
+            const productSlug =
+              product.rawProduct?.slug ||
+              product.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/(^-|-$)/g, "");
+
+            const isWishlisted =
+              isInWishlist(product.id) || isInWishlist(productSlug);
+
             return (
               <div
                 key={product.id}
@@ -114,12 +200,14 @@ export function FeaturedNewArrivals() {
               >
                 {/* Image Container */}
                 <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-950">
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                  />
+                  <Link href={`/products/${productSlug}`}>
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </Link>
 
                   {/* Badges */}
                   {product.badge && (
@@ -128,7 +216,9 @@ export function FeaturedNewArrivals() {
                         variant={product.badge === "SALE" ? "sale" : "new"}
                         className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5"
                       >
-                        {product.badge === "SALE" ? t("shop.saleBadge", "SALE") : t("shop.newBadge", "NEW")}
+                        {product.badge === "SALE"
+                          ? t("shop.saleBadge", "SALE")
+                          : t("shop.newBadge", "NEW")}
                       </Badge>
                     </div>
                   )}
@@ -143,7 +233,7 @@ export function FeaturedNewArrivals() {
                     <Heart
                       className={cn(
                         "h-4 w-4 transition-colors",
-                        isInWishlist(product.id) && "fill-rose-500 text-rose-500 scale-110"
+                        isWishlisted && "fill-rose-500 text-rose-500 scale-110"
                       )}
                     />
                   </button>
@@ -170,7 +260,7 @@ export function FeaturedNewArrivals() {
                     </div>
 
                     <Link
-                      href={`/shop/${product.category}/${product.id}`}
+                      href={`/products/${productSlug}`}
                       className="block text-xs sm:text-sm font-bold text-neutral-900 dark:text-white tracking-tight line-clamp-1 hover:underline"
                     >
                       {product.name}
@@ -178,40 +268,35 @@ export function FeaturedNewArrivals() {
 
                     {/* Color Swatch Dots */}
                     {product.colors.length > 0 && (
-                      <div className="flex items-center gap-1.5 pt-1">
-                        {product.colors.map((c) => (
+                      <div className="flex items-center gap-1 pt-0.5">
+                        {product.colors.map((color, idx) => (
                           <span
-                            key={c.name}
-                            title={c.name}
-                            className="h-2.5 w-2.5 rounded-full border border-black/10 dark:border-white/10"
-                            style={{ backgroundColor: c.hex }}
+                            key={idx}
+                            title={color.name}
+                            style={{ backgroundColor: color.hex }}
+                            className="h-2.5 w-2.5 rounded-full border border-neutral-300 dark:border-neutral-700 inline-block"
                           />
                         ))}
                       </div>
                     )}
                   </div>
 
-                  {/* Price & Add button */}
-                  <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between">
+                  {/* Price Row */}
+                  <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm sm:text-base font-extrabold text-neutral-950 dark:text-white">
+                      <span className="text-sm font-black text-neutral-950 dark:text-white">
                         {formatPrice(product.price)}
                       </span>
                       {product.originalPrice && (
-                        <span className="text-xs font-medium text-neutral-400 line-through">
+                        <span className="text-xs text-neutral-400 line-through font-semibold">
                           {formatPrice(product.originalPrice)}
                         </span>
                       )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setQuickViewProduct(product)}
-                      aria-label={`Buy ${product.name}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-900 hover:text-white dark:hover:bg-white dark:hover:text-neutral-950 transition-colors focus:outline-none"
-                    >
-                      <ShoppingBag className="h-3.5 w-3.5" />
-                    </button>
+                    <span className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
+                      ★ {product.rating} ({product.reviewsCount})
+                    </span>
                   </div>
                 </div>
               </div>
@@ -219,23 +304,26 @@ export function FeaturedNewArrivals() {
           })}
         </div>
 
-        {/* Bottom Collection Link */}
+        {/* Explore All Link */}
         <div className="mt-12 text-center">
-          <Link href="/shop">
-            <Button variant="outline" size="lg" className="font-bold tracking-wide gap-2 border-neutral-300 dark:border-neutral-700">
-              {isBn ? "সকল ১২০+ পণ্য দেখুন" : "View All 120+ Products"}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+          <Link
+            href="/shop"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 text-xs font-bold tracking-wide hover:opacity-90 transition-opacity shadow-md"
+          >
+            <span>{t("home.viewAllProducts", "Explore All Drops")}</span>
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>
 
       {/* Quick View Modal */}
-      <QuickViewModal
-        product={quickViewProduct}
-        isOpen={!!quickViewProduct}
-        onClose={() => setQuickViewProduct(null)}
-      />
+      {quickViewProduct && (
+        <QuickViewModal
+          product={quickViewProduct}
+          isOpen={!!quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+        />
+      )}
     </section>
   );
 }

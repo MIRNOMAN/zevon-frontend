@@ -36,16 +36,25 @@ export interface CheckoutInput {
 
 export interface OrderItem {
   id: string;
-  orderId: string;
-  productVariantId: string;
+  orderId?: string;
+  productId?: string;
+  variantId?: string;
+  productVariantId?: string;
   productTitle: string;
-  variantSku: string;
+  sku?: string;
+  variantSku?: string;
   size: string;
   color: string;
   unitPrice: number;
   quantity: number;
   totalPrice: number;
   productImage?: string;
+  product?: {
+    id?: string;
+    title?: string;
+    slug?: string;
+    images?: Array<{ url: string; isPrimary?: boolean } | string>;
+  };
 }
 
 export interface Order {
@@ -65,17 +74,18 @@ export interface Order {
   notes?: string | null;
   courierName?: string | null;
   trackingNumber?: string | null;
+  itemCount?: number;
   items: OrderItem[];
   shippingZone?: {
-    id: string;
-    name: string;
-    estimatedDeliveryDays: string;
+    id?: string;
+    name?: string;
+    estimatedDeliveryDays?: string;
   };
   coupon?: {
-    id: string;
-    code: string;
-    discountType: string;
-    discountValue: number;
+    id?: string;
+    code?: string;
+    discountType?: string;
+    discountValue?: number;
   };
   createdAt: string;
   updatedAt: string;
@@ -115,10 +125,16 @@ export interface ApiResponse<T> {
 
 export interface PaginatedOrders {
   orders: Order[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export const orderApi = baseApi.injectEndpoints({
@@ -129,7 +145,7 @@ export const orderApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Order", "Cart"],
+      invalidatesTags: ["Order", "Cart", "Wishlist"],
     }),
     getMyOrders: builder.query<ApiResponse<PaginatedOrders | Order[]>, { page?: number; limit?: number; status?: string } | void>({
       query: (params) => ({

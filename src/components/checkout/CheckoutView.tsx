@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useAppSelector } from "@/redux/hooks";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { useCurrency, useTranslation, toBengaliDigits } from "@/lib/i18n";
 import { useGetAddressesQuery, useCreateAddressMutation, Address } from "@/redux/api/addressApi";
 import { useValidateCouponMutation, CouponValidationResult } from "@/redux/api/couponApi";
@@ -43,6 +44,7 @@ export function CheckoutView() {
   const { formatPrice, currency } = useCurrency();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const { items, subtotal: cartSubtotal, clearCart } = useCart();
+  const { clearPurchasedItems } = useWishlist();
 
   // ── 1. Address State ──
   const { data: addressesData, isLoading: isAddressesLoading } = useGetAddressesQuery(undefined, {
@@ -237,7 +239,11 @@ export function CheckoutView() {
       const placedOrder = res.data;
 
       if (placedOrder) {
-        // Clear cart
+        // Clear purchased items from wishlist and cart
+        const purchasedProductIds = items
+          .map((i) => i.product?.id || i.product?.slug || i.variant?.id)
+          .filter(Boolean) as string[];
+        clearPurchasedItems(purchasedProductIds);
         await clearCart();
 
         // If Stripe payment selected, initiate session & redirect

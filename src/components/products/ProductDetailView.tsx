@@ -35,6 +35,7 @@ import { useTranslation, useCurrency, toBengaliDigits, getCategoryI18nName } fro
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { StockAlertModal } from "./StockAlertModal";
+import Image from "next/image";
 
 interface ProductDetailViewProps {
   product: Product;
@@ -49,7 +50,6 @@ export function ProductDetailView({
   const { formatPrice } = useCurrency();
   const { addToCart, openCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const isWishlisted = isInWishlist(product.id);
 
   // Images setup
   const rawImages: string[] =
@@ -172,6 +172,21 @@ export function ProductDetailView({
       : isBn ? "পোশাক" : "Apparel";
 
   const displayName = product.title || product.name || "ZEVON Heavyweight Piece";
+  const isWishlisted = isInWishlist(product.id) || (product.slug ? isInWishlist(product.slug) : false);
+
+  const handleToggleWishlist = () => {
+    toggleWishlist({
+      id: product.id,
+      title: displayName,
+      name: displayName,
+      slug: product.slug,
+      price,
+      basePrice: product.basePrice,
+      discountPrice: product.discountPrice,
+      image: selectedImage,
+      category: product.category,
+    });
+  };
 
   const handleAddToCart = async () => {
     if (isVariantOutOfStock) return;
@@ -281,10 +296,11 @@ export function ProductDetailView({
                       : "border-transparent opacity-70 hover:opacity-100 hover:border-neutral-300 dark:hover:border-neutral-700"
                   )}
                 >
-                  <img
+                  <Image
                     src={img}
                     alt={`${displayName} thumb ${idx + 1}`}
-                    className="h-full w-full object-cover object-center"
+                    fill
+                    className="object-cover object-center"
                   />
                 </button>
               ))}
@@ -293,9 +309,11 @@ export function ProductDetailView({
 
           {/* Main Hero Preview */}
           <div className="relative flex-1 aspect-4/5 rounded-3xl overflow-hidden bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-800 shadow-xl group">
-            <img
-              src={selectedImage}
+            <Image
+              src={selectedImage || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=900&auto=format&fit=crop&q=80"}
               alt={displayName}
+              width={500}
+              height={500}
               className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
             />
 
@@ -556,6 +574,26 @@ export function ProductDetailView({
                     <span>{t("home.addToBag", "Add to Bag")}</span>
                   </>
                 )}
+              </button>
+
+              {/* Wishlist Toggle Button */}
+              <button
+                type="button"
+                onClick={handleToggleWishlist}
+                aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                className={cn(
+                  "flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl font-bold text-sm border transition-all duration-200 shadow-sm active:scale-95",
+                  isWishlisted
+                    ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/40 dark:border-rose-900/60 dark:text-rose-400"
+                    : "bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-700"
+                )}
+              >
+                <Heart
+                  className={cn(
+                    "h-5 w-5 transition-transform",
+                    isWishlisted ? "fill-rose-500 text-rose-500 scale-110" : ""
+                  )}
+                />
               </button>
             </div>
 

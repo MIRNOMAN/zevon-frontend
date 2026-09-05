@@ -59,6 +59,20 @@ export const wishlistApi = baseApi.injectEndpoints({
       invalidatesTags: ["Wishlist"],
     }),
 
+    removeWishlistItem: builder.mutation<ToggleWishlistResponse, string>({
+      query: (productId) => ({
+        url: `/wishlists/${productId}`,
+        method: "DELETE",
+      }),
+      transformResponse: (response: any): ToggleWishlistResponse => {
+        if (response && response.data) {
+          return response.data;
+        }
+        return response;
+      },
+      invalidatesTags: ["Wishlist"],
+    }),
+
     clearWishlist: builder.mutation<{ clearedCount: number; message: string }, void>({
       query: () => ({
         url: "/wishlists",
@@ -73,5 +87,6 @@ export const {
   useGetWishlistQuery,
   useCheckWishlistQuery,
   useToggleWishlistMutation,
+  useRemoveWishlistItemMutation,
   useClearWishlistMutation,
 } = wishlistApi;

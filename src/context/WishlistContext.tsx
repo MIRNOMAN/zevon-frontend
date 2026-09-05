@@ -11,10 +11,11 @@ import React, {
 import Link from "next/link";
 import { Heart, X, Trash2 } from "lucide-react";
 import { useAppSelector } from "@/redux/hooks";
-import { selectIsAuthenticated } from "@/redux/features/authSlice";
 import {
   useGetWishlistQuery,
   useToggleWishlistMutation,
+  useRemoveWishlistItemMutation,
+  useClearWishlistMutation,
 } from "@/redux/api/wishlistApi";
 import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -48,83 +49,111 @@ interface WishlistContextType {
   isInWishlist: (productId: string) => boolean;
   toggleWishlist: (product: WishlistProductItem) => Promise<void>;
   removeFromWishlist: (productId: string) => Promise<void>;
+  clearWishlist: () => Promise<void>;
+  clearPurchasedItems: (productIds: string[]) => void;
 }
 
 const WishlistContext = createContext<WishlistContextType | null>(null);
 
-const STORAGE_KEY = "zevon_wishlist_items";
-
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { isBn } = useTranslation();
-  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [items, setItems] = useState<WishlistProductItem[]>([]);
   const [toast, setToast] = useState<ToastNotification | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const initialLoadDone = useRef(false);
+
+  const storageKey = user?.id ? `zevon_wishlist_${user.id}` : "zevon_wishlist_guest";
 
   // Backend RTK Query (auto triggers when authenticated)
-  const { data: serverWishlist, isLoading: isServerLoading } = useGetWishlistQuery(
+  const { data: serverWishlist, isLoading: isServerLoading, refetch } = useGetWishlistQuery(
     undefined,
     { skip: !isAuthenticated }
   );
   const [triggerToggle] = useToggleWishlistMutation();
+  const [triggerRemove] = useRemoveWishlistItemMutation();
+  const [triggerClear] = useClearWishlistMutation();
 
-  // Load from localStorage immediately on mount
+  // Load from user-scoped localStorage immediately on mount / user change
   useEffect(() => {
     setIsMounted(true);
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           setItems(parsed);
+          return;
         }
       }
+      // If no user-specific key exists, check legacy storage key once
+      const legacy = localStorage.getItem("zevon_wishlist_items");
+      if (legacy) {
+        const parsedLegacy = JSON.parse(legacy);
+        if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
+          setItems(parsedLegacy);
+          localStorage.setItem(storageKey, legacy);
+          localStorage.removeItem("zevon_wishlist_items");
+          return;
+        }
+      }
+      setItems([]);
     } catch {
-      // Ignore storage errors
+      setItems([]);
     }
-    initialLoadDone.current = true;
-  }, []);
+  }, [storageKey]);
 
-  // When server wishlist loads, merge and persist
+  // When server wishlist loads/updates, sync and persist
   useEffect(() => {
     if (isAuthenticated && serverWishlist?.items) {
-      const serverMapped: WishlistProductItem[] = serverWishlist.items.map((item) => ({
-        id: item.product.id,
-        title: item.product.title || item.product.name || "Product",
-        name: item.product.title || item.product.name || "Product",
-        slug: item.product.slug,
-        price: item.product.discountPrice || item.product.basePrice || 0,
-        basePrice: item.product.basePrice,
-        discountPrice: item.product.discountPrice,
-        image:
-          (item.product.primaryImage as any)?.url ||
-          (typeof item.product.images?.[0] === "string"
-            ? item.product.images[0]
-            : (item.product.images?.[0] as any)?.url) ||
-          item.product.image ||
-          "",
-        category: item.product.category,
-      }));
+      const serverMapped: WishlistProductItem[] = serverWishlist.items.map((item) => {
+        const p = item.product;
+        const primaryImgUrl =
+          (p.primaryImage as any)?.url ||
+          (typeof p.images?.[0] === "string"
+            ? p.images[0]
+            : (p.images?.[0] as any)?.url) ||
+          (p as any).image ||
+          "";
+
+        return {
+          id: p.id,
+          title: p.title || (p as any).name || "Product",
+          name: p.title || (p as any).name || "Product",
+          slug: p.slug,
+          price: p.discountPrice || p.basePrice || 0,
+          basePrice: p.basePrice,
+          discountPrice: p.discountPrice,
+          image: primaryImgUrl,
+          images: Array.isArray(p.images)
+            ? p.images.map((img: any) => (typeof img === "string" ? img : img.url))
+            : primaryImgUrl
+            ? [primaryImgUrl]
+            : [],
+          category: p.category,
+        };
+      });
 
       setItems(serverMapped);
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(serverMapped));
+        localStorage.setItem(storageKey, JSON.stringify(serverMapped));
       } catch {
-        // Ignore
+        // Ignore storage errors
       }
     }
-  }, [isAuthenticated, serverWishlist]);
+  }, [isAuthenticated, serverWishlist, storageKey]);
 
   // Helper to persist state & storage
-  const persistItems = (newItems: WishlistProductItem[]) => {
-    setItems(newItems);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
-    } catch {
-      // Ignore
-    }
-  };
+  const persistItems = useCallback(
+    (newItems: WishlistProductItem[]) => {
+      setItems(newItems);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newItems));
+      } catch {
+        // Ignore storage errors
+      }
+    },
+    [storageKey]
+  );
 
   const wishlistIds = items.map((i) => i.id);
 
@@ -134,7 +163,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       return items.some(
         (item) =>
           item.id === productId ||
-          (item.slug && item.slug === productId) ||
+          (item.slug && item.slug.toLowerCase() === productId.toLowerCase()) ||
           (item.title && item.title.toLowerCase() === productId.toLowerCase())
       );
     },
@@ -172,10 +201,10 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       nextItems = items.filter(
         (i) =>
           i.id !== product.id &&
-          (!product.slug || i.slug !== product.slug)
+          (!product.slug || i.slug.toLowerCase() !== product.slug.toLowerCase())
       );
     } else {
-      nextItems = [product, ...items.filter((i) => i.id !== product.id)];
+      nextItems = [product, ...items.filter((i) => i.id !== product.id && (!product.slug || i.slug !== product.slug))];
     }
 
     // Optimistically update instantly
@@ -193,8 +222,16 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeFromWishlist = async (productId: string) => {
-    const item = items.find((i) => i.id === productId || i.slug === productId);
-    const nextItems = items.filter((i) => i.id !== productId && i.slug !== productId);
+    const item = items.find(
+      (i) =>
+        i.id === productId ||
+        (i.slug && i.slug.toLowerCase() === productId.toLowerCase())
+    );
+    const nextItems = items.filter(
+      (i) =>
+        i.id !== productId &&
+        (!i.slug || i.slug.toLowerCase() !== productId.toLowerCase())
+    );
 
     persistItems(nextItems);
     if (item) {
@@ -203,12 +240,42 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
     if (isAuthenticated) {
       try {
-        await triggerToggle(productId).unwrap();
+        await triggerRemove(productId).unwrap();
       } catch {
-        // Keeps local state
+        // Fallback toggle if remove fails
+        try {
+          await triggerToggle(productId).unwrap();
+        } catch {}
       }
     }
   };
+
+  const clearWishlist = async () => {
+    persistItems([]);
+    if (isAuthenticated) {
+      try {
+        await triggerClear().unwrap();
+      } catch {}
+    }
+  };
+
+  // Automatically remove purchased products from wishlist upon checkout
+  const clearPurchasedItems = useCallback(
+    (productIds: string[]) => {
+      if (!productIds || productIds.length === 0) return;
+      const lowerIds = productIds.map((id) => id.toLowerCase());
+      const nextItems = items.filter(
+        (item) =>
+          !lowerIds.includes(item.id.toLowerCase()) &&
+          (!item.slug || !lowerIds.includes(item.slug.toLowerCase()))
+      );
+      persistItems(nextItems);
+      if (isAuthenticated) {
+        refetch();
+      }
+    },
+    [items, persistItems, isAuthenticated, refetch]
+  );
 
   return (
     <WishlistContext.Provider
@@ -221,6 +288,8 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         isInWishlist,
         toggleWishlist,
         removeFromWishlist,
+        clearWishlist,
+        clearPurchasedItems,
       }}
     >
       {children}

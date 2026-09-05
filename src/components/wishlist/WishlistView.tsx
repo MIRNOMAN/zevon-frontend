@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 export function WishlistView() {
   const { t, isBn } = useTranslation();
   const { formatPrice } = useCurrency();
-  const { wishlistItems, wishlistCount, removeFromWishlist, isMounted, isLoading } = useWishlist();
+  const { wishlistItems, wishlistCount, removeFromWishlist, clearWishlist, isMounted, isLoading } = useWishlist();
   const { addToCart } = useCart();
   const [addedMap, setAddedMap] = useState<Record<string, boolean>>({});
 
@@ -94,6 +94,17 @@ export function WishlistView() {
               {t("wishlist.subtitle", "Curated streetwear essentials and archive pieces saved for later.")}
             </p>
           </div>
+
+          {isMounted && wishlistItems.length > 0 && (
+            <button
+              type="button"
+              onClick={() => clearWishlist()}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400 transition-colors self-start sm:self-auto py-2 px-3 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-rose-200 dark:hover:border-rose-900/50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>{isBn ? "সব মুছে ফেলুন" : "Clear All"}</span>
+            </button>
+          )}
         </div>
 
         {/* ── Main Content ───────────────────────────────────── */}
