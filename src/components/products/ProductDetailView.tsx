@@ -490,13 +490,13 @@ export function ProductDetailView({
                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
                   {t("cart.size", "Size")}: <span className="font-normal text-neutral-500">{selectedSize}</span>
                 </span>
-                <button
-                  type="button"
+                <Link
+                  href="/size-guide"
                   className="flex items-center gap-1 text-[11px] font-bold text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
                 >
                   <Ruler className="h-3 w-3" />
                   <span>{isBn ? "সাইজ গাইড" : "Size Guide"}</span>
-                </button>
+                </Link>
               </div>
               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                 {product.availableSizes.map((sz: string) => {
@@ -616,18 +616,27 @@ export function ProductDetailView({
 
           {/* Guarantees & USPs */}
           <div className="border-t border-neutral-200 dark:border-neutral-800 pt-5 grid grid-cols-2 gap-3 text-xs">
-            <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-400">
-              <Truck className="h-4 w-4 text-neutral-900 dark:text-white shrink-0" />
+            <Link
+              href="/shipping"
+              className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors group"
+            >
+              <Truck className="h-4 w-4 text-neutral-900 dark:text-white shrink-0 group-hover:scale-110 transition-transform" />
               <span>{isBn ? "২৪-৪৮ ঘণ্টায় এক্সপ্রেস ডেলিভারি" : "24-48H Express Delivery"}</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-400">
-              <RotateCcw className="h-4 w-4 text-neutral-900 dark:text-white shrink-0" />
+            </Link>
+            <Link
+              href="/returns"
+              className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors group"
+            >
+              <RotateCcw className="h-4 w-4 text-neutral-900 dark:text-white shrink-0 group-hover:scale-110 transition-transform" />
               <span>{isBn ? "সহজ ৭ দিনের এক্সচেঞ্জ" : "7-Day Easy Size Exchange"}</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-400">
-              <ShieldCheck className="h-4 w-4 text-neutral-900 dark:text-white shrink-0" />
+            </Link>
+            <Link
+              href="/size-guide"
+              className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors group"
+            >
+              <ShieldCheck className="h-4 w-4 text-neutral-900 dark:text-white shrink-0 group-hover:scale-110 transition-transform" />
               <span>{isBn ? "১০০% প্রিমিয়াম অর্গানিক কটন" : "100% Organic Combed Cotton"}</span>
-            </div>
+            </Link>
             <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-400">
               <Layers className="h-4 w-4 text-neutral-900 dark:text-white shrink-0" />
               <span>{isBn ? "ক্যাশ অন ডেলিভারি সুবিধা" : "Cash on Delivery Available"}</span>

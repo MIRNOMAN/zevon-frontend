@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer/Footer";
+import { FloatingChatWidget } from "@/components/chat/FloatingChatWidget";
 
 export default function MarketingLayout({
   children,
@@ -7,7 +8,7 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-background text-foreground relative">
       {/* ── Navigation ─────────────────────────────────────── */}
       <Navbar />
 
@@ -16,6 +17,9 @@ export default function MarketingLayout({
 
       {/* ── Footer ─────────────────────────────────────────── */}
       <Footer />
+
+      {/* ── Floating Live Concierge Chat Widget ────────────── */}
+      <FloatingChatWidget />
     </div>
   );
 }

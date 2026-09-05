@@ -17,6 +17,7 @@
     "react-dom": "19.2.8",
     "react-fast-marquee": "^1.6.5",
     "react-redux": "^9.3.0",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },

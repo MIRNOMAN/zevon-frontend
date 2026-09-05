@@ -123,16 +123,17 @@ export function ContactView() {
         {/* ── Main 2-Column Grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-start">
           {/* ── Left Column: Contact Details & Quick Links (5 Cols) ── */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 space-y-6 animate-fade-in-up">
             {/* Atelier Info Card */}
-            <div className="rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-6 sm:p-8 shadow-xs space-y-6">
-              <h2 className="text-base sm:text-lg font-black text-neutral-950 dark:text-white uppercase tracking-wider">
-                {isBn ? "সরাসরি যোগাযোগের ঠিকানা" : "Studio & Support Information"}
+            <div className="rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-6 sm:p-8 shadow-xs space-y-6 hover-card-lift transition-all">
+              <h2 className="text-base sm:text-lg font-black text-neutral-950 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{isBn ? "সরাসরি যোগাযোগের ঠিকানা" : "Studio & Support Information"}</span>
               </h2>
 
               <div className="space-y-5 text-xs sm:text-sm">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white">
+                <div className="flex items-start gap-4 group">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white group-hover:scale-110 transition-transform">
                     <MapPin className="h-5 w-5" />
                   </div>
                   <div>
@@ -145,8 +146,8 @@ export function ContactView() {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white">
+                <div className="flex items-start gap-4 group">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white group-hover:scale-110 transition-transform">
                     <Phone className="h-5 w-5" />
                   </div>
                   <div>
@@ -159,8 +160,8 @@ export function ContactView() {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white">
+                <div className="flex items-start gap-4 group">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white group-hover:scale-110 transition-transform">
                     <Mail className="h-5 w-5" />
                   </div>
                   <div>
@@ -173,8 +174,8 @@ export function ContactView() {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white">
+                <div className="flex items-start gap-4 group">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white group-hover:scale-110 transition-transform">
                     <Clock className="h-5 w-5" />
                   </div>
                   <div>
@@ -192,7 +193,7 @@ export function ContactView() {
             </div>
 
             {/* Quick Actions Card */}
-            <div className="rounded-3xl bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800 p-6 sm:p-7 space-y-4">
+            <div className="rounded-3xl bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800 p-6 sm:p-7 space-y-4 hover-card-lift transition-all">
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-950 dark:text-white flex items-center gap-2">
                 <HelpCircle className="h-4 w-4 text-neutral-500" />
                 <span>{isBn ? "দ্রুত সাহায্য ও নির্দেশিকা" : "Quick Help & Self-Service"}</span>
@@ -201,7 +202,7 @@ export function ContactView() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5">
                 <Link
                   href="/account/orders"
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-neutral-400 dark:hover:border-neutral-500 text-xs font-bold text-neutral-950 dark:text-white transition-all shadow-xs"
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-neutral-400 dark:hover:border-neutral-500 text-xs font-bold text-neutral-950 dark:text-white transition-all shadow-xs hover:translate-x-1"
                 >
                   <div className="flex items-center gap-2.5">
                     <ShoppingBag className="h-4 w-4 text-neutral-500" />
@@ -212,7 +213,7 @@ export function ContactView() {
 
                 <Link
                   href="/returns"
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-neutral-400 dark:hover:border-neutral-500 text-xs font-bold text-neutral-950 dark:text-white transition-all shadow-xs"
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-neutral-400 dark:hover:border-neutral-500 text-xs font-bold text-neutral-950 dark:text-white transition-all shadow-xs hover:translate-x-1"
                 >
                   <div className="flex items-center gap-2.5">
                     <RotateCcw className="h-4 w-4 text-neutral-500" />
@@ -223,7 +224,7 @@ export function ContactView() {
 
                 <Link
                   href="/size-guide"
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-neutral-400 dark:hover:border-neutral-500 text-xs font-bold text-neutral-950 dark:text-white transition-all shadow-xs"
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/60 hover:border-neutral-400 dark:hover:border-neutral-500 text-xs font-bold text-neutral-950 dark:text-white transition-all shadow-xs hover:translate-x-1"
                 >
                   <div className="flex items-center gap-2.5">
                     <Ruler className="h-4 w-4 text-neutral-500" />
