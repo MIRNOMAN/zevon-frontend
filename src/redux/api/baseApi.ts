@@ -132,6 +132,11 @@ export const baseApi = createApi({
     "Referral",
     "Return",
     "Recommendation",
+    "Loyalty",
+    "Outfit",
+    "Lookbook",
+    "GiftCard",
+    "Search",
   ],
   endpoints: () => ({}),
 });

@@ -53,15 +53,19 @@ function StorefrontCatalogContent({
   const { formatPrice } = useCurrency();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParam = searchParams.get("search") || undefined;
   const { isInWishlist, toggleWishlist } = useWishlist();
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>(initialSubCategory || "all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [quickViewProduct, setQuickViewProduct] = useState<HomeProduct | null>(null);
 
-  const displaySubtitle = subtitle || description;
+  const displaySubtitle = searchParam
+    ? `Showing search results for "${searchParam}" across ZEVON collections.`
+    : subtitle || description;
 
   // Query parameters
   const queryParams = {
+    search: searchParam,
     gender: gender,
     categorySlug: selectedSubCategory !== "all" ? selectedSubCategory : categorySlug,
     sortBy: sortBy,

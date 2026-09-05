@@ -142,6 +142,16 @@ export function Footer() {
                   {isBn ? "সাইজ গাইড ও জিএসএম" : "Size Guide & GSM"}
                 </Link>
               </li>
+              <li>
+                <Link href="/gift-cards" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {isBn ? "ডিজিটাল গিফট কার্ড" : "Digital Gift Cards"}
+                </Link>
+              </li>
+              <li>
+                <Link href="/loyalty" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {isBn ? "লয়ালটি ক্লাব ও রিওয়ার্ডস" : "ZEVON Club & Perks"}
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -164,6 +174,16 @@ export function Footer() {
               <li>
                 <Link href="/stores" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
                   {isBn ? "ফ্ল্যাগশিপ আউটলেট (ঢাকা)" : "Flagship Store (Dhaka)"}
+                </Link>
+              </li>
+              <li>
+                <Link href="/lookbooks" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {isBn ? "শপ দ্য লুক (লুকবুক)" : "Shoppable Lookbook"}
+                </Link>
+              </li>
+              <li>
+                <Link href="/outfits" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                  {isBn ? "আউটফিট বিল্ডার" : "Outfit Builder Canvas"}
                 </Link>
               </li>
               <li>
