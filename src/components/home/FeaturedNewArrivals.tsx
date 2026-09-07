@@ -90,8 +90,14 @@ export function FeaturedNewArrivals() {
               : "Apparel",
           price: priceNum,
           originalPrice: originalPriceNum,
-          rating: 4.9,
-          reviewsCount: 24,
+          rating:
+            p.rating !== undefined && p.rating !== null
+              ? Number(p.rating)
+              : ((p as any).avgRating ? Number((p as any).avgRating) : 0),
+          reviewsCount:
+            p.reviewCount !== undefined && p.reviewCount !== null
+              ? Number(p.reviewCount)
+              : ((p as any).reviewsCount !== undefined ? Number((p as any).reviewsCount) : 0),
           badge: p.discountPrice ? "SALE" : p.isFeatured ? "HOT" : "NEW",
           images: allImages,
           colors: [
@@ -295,7 +301,18 @@ export function FeaturedNewArrivals() {
                     </div>
 
                     <span className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
-                      ★ {product.rating} ({product.reviewsCount})
+                      {product.reviewsCount > 0 ? (
+                        <>
+                          <span className="text-amber-500">★</span>{" "}
+                          <span>{product.rating > 0 ? product.rating.toFixed(1) : "5.0"}</span>{" "}
+                          <span className="text-neutral-400">({product.reviewsCount})</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-amber-400/70">★</span>{" "}
+                          <span className="text-neutral-400 font-semibold">{isBn ? "নতুন ড্রপ" : "New Drop"}</span>
+                        </>
+                      )}
                     </span>
                   </div>
                 </div>

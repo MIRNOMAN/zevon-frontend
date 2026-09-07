@@ -63,6 +63,7 @@ export interface Product {
   availableSizes?: string[];
   availableColors?: { color: string; colorCode: string }[];
   reviewCount?: number;
+  rating?: number;
   averageRating?: number;
   reviews?: ProductReview[];
   ratingBreakdown?: { [key: number]: number };

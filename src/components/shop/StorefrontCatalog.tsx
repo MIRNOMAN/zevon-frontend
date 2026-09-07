@@ -49,7 +49,7 @@ function StorefrontCatalogContent({
   initialSubCategory,
   subCategories = [],
 }: StorefrontCatalogProps) {
-  const { t } = useTranslation();
+  const { t, isBn } = useTranslation();
   const { formatPrice } = useCurrency();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -126,8 +126,8 @@ function StorefrontCatalogContent({
       subcategory: typeof p.category === "object" ? p.category?.name || "Apparel" : String(p.category || "Apparel"),
       price: discP ? discP : baseP,
       originalPrice: discP ? baseP : undefined,
-      rating: 4.9,
-      reviewsCount: p.reviewCount || 12,
+      rating: p.rating !== undefined && p.rating !== null ? Number(p.rating) : 0,
+      reviewsCount: p.reviewCount !== undefined && p.reviewCount !== null ? Number(p.reviewCount) : 0,
       badge: discP ? "SALE" : p.isFeatured ? "NEW" : undefined,
       images: allImgUrls.length > 0 ? allImgUrls : [primaryImgUrl],
       colors: p.availableColors?.map((c) => ({ name: c.color, hex: c.colorCode })) || [
@@ -416,13 +416,36 @@ function StorefrontCatalogContent({
                         )}
                       </div>
 
-                      <Link
-                        href={`/products/${product.slug}`}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white group-hover:bg-neutral-950 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-neutral-950 transition-colors"
-                        aria-label="View product"
-                      >
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
+                          {product.reviewCount && product.reviewCount > 0 ? (
+                            <>
+                              <span className="text-amber-500">★</span>{" "}
+                              <span>
+                                {product.rating && product.rating > 0
+                                  ? Number(product.rating).toFixed(1)
+                                  : "5.0"}
+                              </span>{" "}
+                              <span className="text-neutral-400">({product.reviewCount})</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-amber-400/70">★</span>{" "}
+                              <span className="text-neutral-400 font-semibold">
+                                {isBn ? "নতুন ড্রপ" : "New Drop"}
+                              </span>
+                            </>
+                          )}
+                        </span>
+
+                        <Link
+                          href={`/products/${product.slug}`}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white group-hover:bg-neutral-950 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-neutral-950 transition-colors"
+                          aria-label="View product"
+                        >
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -138,6 +138,7 @@ export const baseApi = createApi({
     "GiftCard",
     "Search",
     "FlashSale",
+    "AbandonedCart",
   ],
   endpoints: () => ({}),
 });

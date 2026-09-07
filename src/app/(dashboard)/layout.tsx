@@ -10,8 +10,8 @@ export default function DashboardLayout({
       {/* ── Sidebar ────────────────────────────────── */}
       <aside className="hidden w-64 shrink-0 border-r border-foreground/10 bg-foreground/[0.02] lg:block">
         <div className="flex h-16 items-center border-b border-foreground/10 px-6">
-          <Link href="/" className="text-lg font-bold tracking-tight">
-            Acme
+          <Link href="/" className="text-lg font-black tracking-wider uppercase">
+            ZEVON
           </Link>
         </div>
 
@@ -31,10 +31,16 @@ export default function DashboardLayout({
 
       {/* ── Main Content ───────────────────────────── */}
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center border-b border-foreground/10 px-6">
+        <header className="flex h-16 items-center justify-between border-b border-foreground/10 px-6">
           <h2 className="text-sm font-semibold text-foreground/50">
-            Dashboard
+            Admin Console
           </h2>
+          <Link
+            href="/"
+            className="text-xs font-bold text-foreground/70 hover:text-foreground transition-colors"
+          >
+            ← View Storefront
+          </Link>
         </header>
         <main className="flex-1 p-6">{children}</main>
       </div>
@@ -48,8 +54,10 @@ export default function DashboardLayout({
 
 const sidebarLinks = [
   { icon: "🏠", label: "Overview", href: "/dashboard" },
+  { icon: "🛒", label: "Abandoned Carts", href: "/dashboard/abandoned-carts" },
   { icon: "📦", label: "Products", href: "/dashboard" },
   { icon: "👥", label: "Customers", href: "/dashboard" },
   { icon: "📈", label: "Analytics", href: "/dashboard" },
   { icon: "⚙️", label: "Settings", href: "/dashboard" },
 ] as const;
+

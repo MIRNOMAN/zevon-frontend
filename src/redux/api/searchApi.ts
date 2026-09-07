@@ -95,6 +95,9 @@ export interface VisualSearchRequest {
   image?: File;
   imageUrl?: string;
   hexColor?: string;
+  dominantColorName?: string;
+  detectedTone?: string;
+  palette?: string;
   categoryHint?: string;
   limit?: number;
 }

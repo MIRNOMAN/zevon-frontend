@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, ShoppingBag, Heart, Star, Check, ShieldCheck, Bell } from "lucide-react";
+import { X, ShoppingBag, Heart, Star, Check, ShieldCheck, Bell, Ruler, ChevronDown } from "lucide-react";
 import { Product } from "./homeData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,69 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 import { StockAlertModal } from "@/components/products/StockAlertModal";
 import { cn } from "@/lib/utils";
+
+const SIZE_GUIDE_DATA = {
+  bottoms: {
+    title: "Trousers & Skirts Size Guide",
+    titleBn: "ট্রাউজার্স ও স্কার্ট সাইজ গাইড",
+    cols: ["Size", "Waist", "Length", "Thigh", "Inseam"],
+    colsBn: ["সাইজ", "কোমর", "দৈর্ঘ্য", "উরু", "ইনসিম"],
+    in: [
+      { size: "S", col1: "28-30", col2: "39.0", col3: "24.0", col4: "29.0" },
+      { size: "M", col1: "31-33", col2: "40.0", col3: "25.0", col4: "29.5" },
+      { size: "L", col1: "34-36", col2: "41.0", col3: "26.0", col4: "30.0" },
+      { size: "XL", col1: "37-39", col2: "42.0", col3: "27.0", col4: "30.5" },
+      { size: "XXL", col1: "40-42", col2: "43.0", col3: "28.0", col4: "31.0" },
+    ],
+    cm: [
+      { size: "S", col1: "71-76", col2: "99.1", col3: "61.0", col4: "73.7" },
+      { size: "M", col1: "78-84", col2: "101.6", col3: "63.5", col4: "74.9" },
+      { size: "L", col1: "86-91", col2: "104.1", col3: "66.0", col4: "76.2" },
+      { size: "XL", col1: "94-99", col2: "106.7", col3: "68.6", col4: "77.5" },
+      { size: "XXL", col1: "101-107", col2: "109.2", col3: "71.1", col4: "78.7" },
+    ],
+  },
+  hoodies: {
+    title: "Hoodies & Sweatshirts Size Guide",
+    titleBn: "হুডি ও সোয়েটশার্ট সাইজ গাইড",
+    cols: ["Size", "Chest", "Length", "Shoulder", "Sleeve"],
+    colsBn: ["সাইজ", "বুক", "দৈর্ঘ্য", "কাঁধ", "হাতা"],
+    in: [
+      { size: "S", col1: "44.0", col2: "27.5", col3: "22.0", col4: "24.0" },
+      { size: "M", col1: "46.0", col2: "28.5", col3: "23.0", col4: "24.5" },
+      { size: "L", col1: "48.0", col2: "29.5", col3: "24.0", col4: "25.0" },
+      { size: "XL", col1: "51.0", col2: "30.5", col3: "25.0", col4: "25.5" },
+      { size: "XXL", col1: "54.0", col2: "31.5", col3: "26.0", col4: "26.0" },
+    ],
+    cm: [
+      { size: "S", col1: "111.8", col2: "69.8", col3: "55.9", col4: "61.0" },
+      { size: "M", col1: "116.8", col2: "72.4", col3: "58.4", col4: "62.2" },
+      { size: "L", col1: "121.9", col2: "74.9", col3: "61.0", col4: "63.5" },
+      { size: "XL", col1: "129.5", col2: "77.5", col3: "63.5", col4: "64.8" },
+      { size: "XXL", col1: "137.2", col2: "80.0", col3: "66.0", col4: "66.0" },
+    ],
+  },
+  tops: {
+    title: "T-Shirts & Tops Size Guide",
+    titleBn: "টি-শার্ট ও টপস সাইজ গাইড",
+    cols: ["Size", "Chest", "Length", "Shoulder", "Sleeve"],
+    colsBn: ["সাইজ", "বুক", "দৈর্ঘ্য", "কাঁধ", "হাতা"],
+    in: [
+      { size: "S", col1: "42.0", col2: "28.0", col3: "21.5", col4: "8.5" },
+      { size: "M", col1: "44.0", col2: "29.0", col3: "22.5", col4: "9.0" },
+      { size: "L", col1: "46.0", col2: "30.0", col3: "23.5", col4: "9.5" },
+      { size: "XL", col1: "48.0", col2: "31.0", col3: "24.5", col4: "10.0" },
+      { size: "XXL", col1: "50.0", col2: "32.0", col3: "25.5", col4: "10.5" },
+    ],
+    cm: [
+      { size: "S", col1: "106.7", col2: "71.1", col3: "54.6", col4: "21.6" },
+      { size: "M", col1: "111.8", col2: "73.7", col3: "57.2", col4: "22.9" },
+      { size: "L", col1: "116.8", col2: "76.2", col3: "59.7", col4: "24.1" },
+      { size: "XL", col1: "121.9", col2: "78.7", col3: "62.2", col4: "25.4" },
+      { size: "XXL", col1: "127.0", col2: "81.3", col3: "64.8", col4: "26.7" },
+    ],
+  },
+};
 
 interface QuickViewModalProps {
   product: Product | null;
@@ -34,6 +97,16 @@ export function QuickViewModal({
   const [quantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
   const [isStockAlertOpen, setIsStockAlertOpen] = useState(false);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [sizeGuideUnit, setSizeGuideUnit] = useState<"in" | "cm">("in");
+
+  const catLower = (((product?.category || "") + " " + (product?.name || "")).toLowerCase());
+  const guideType = catLower.includes("trouser") || catLower.includes("pant") || catLower.includes("skirt") || catLower.includes("cargo") || catLower.includes("short")
+    ? "bottoms"
+    : catLower.includes("hoodie") || catLower.includes("sweatshirt") || catLower.includes("fleece")
+    ? "hoodies"
+    : "tops";
+  const guideData = SIZE_GUIDE_DATA[guideType];
 
   const isWishlisted = product ? isInWishlist(product.id) : false;
 
@@ -302,12 +375,18 @@ export function QuickViewModal({
               {/* Size Selector */}
               {product.sizes.length > 0 && (
                 <div className="space-y-2 pt-1">
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-neutral-700 dark:text-neutral-300">
                       {t("quickView.selectSize", "Select Size")}:
                     </span>
-                    <button type="button" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white underline">
-                      {isBn ? "সাইজ চার্ট" : "Size Guide"}
+                    <button
+                      type="button"
+                      onClick={() => setShowSizeGuide(!showSizeGuide)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors underline decoration-dotted underline-offset-2"
+                    >
+                      <Ruler className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-400" />
+                      <span>{isBn ? (showSizeGuide ? "সাইজ চার্ট লুকান" : "সাইজ চার্ট দেখুন") : (showSizeGuide ? "Hide Size Guide" : "Size Guide")}</span>
+                      <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", showSizeGuide && "rotate-180")} />
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -327,6 +406,96 @@ export function QuickViewModal({
                       </button>
                     ))}
                   </div>
+
+                  {/* Collapsible Size Guide Table directly underneath */}
+                  {showSizeGuide && (
+                    <div className="mt-3 p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-900/90 border border-neutral-200/80 dark:border-neutral-800 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-200/60 dark:border-neutral-800">
+                        <div className="flex items-center gap-1.5 font-bold text-neutral-800 dark:text-neutral-200 text-[11px] uppercase tracking-wider">
+                          <Ruler className="h-3.5 w-3.5 text-neutral-500" />
+                          <span>{isBn ? guideData.titleBn : guideData.title}</span>
+                        </div>
+
+                        {/* Unit Switcher */}
+                        <div className="flex items-center bg-neutral-200/70 dark:bg-neutral-800 rounded-lg p-0.5 text-[10px] font-bold">
+                          <button
+                            type="button"
+                            onClick={() => setSizeGuideUnit("in")}
+                            className={cn(
+                              "px-2 py-0.5 rounded-md transition-colors",
+                              sizeGuideUnit === "in"
+                                ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-2xs"
+                                : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+                            )}
+                          >
+                            IN
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSizeGuideUnit("cm")}
+                            className={cn(
+                              "px-2 py-0.5 rounded-md transition-colors",
+                              sizeGuideUnit === "cm"
+                                ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-2xs"
+                                : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+                            )}
+                          >
+                            CM
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Measurements Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-center text-[11px]">
+                          <thead>
+                            <tr className="text-neutral-400 font-semibold border-b border-neutral-200/40 dark:border-neutral-800/60">
+                              {(isBn ? guideData.colsBn : guideData.cols).map((col, idx) => (
+                                <th key={col} className={cn("py-1 font-medium", idx === 0 ? "text-left pl-1" : "px-1.5")}>
+                                  {col}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-neutral-200/40 dark:divide-neutral-800/40 font-mono">
+                            {guideData[sizeGuideUnit].map((row) => {
+                              const isActive = selectedSize?.toUpperCase() === row.size;
+                              return (
+                                <tr
+                                  key={row.size}
+                                  onClick={() => setSelectedSize(row.size)}
+                                  className={cn(
+                                    "cursor-pointer transition-colors",
+                                    isActive
+                                      ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 font-bold rounded-md"
+                                      : "hover:bg-neutral-200/40 dark:hover:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300"
+                                  )}
+                                >
+                                  <td className="py-1.5 pl-1.5 text-left font-sans font-bold">{row.size}</td>
+                                  <td className="py-1.5 px-1.5">{row.col1}</td>
+                                  <td className="py-1.5 px-1.5">{row.col2}</td>
+                                  <td className="py-1.5 px-1.5">{row.col3}</td>
+                                  <td className="py-1.5 px-1.5">{row.col4}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="mt-2.5 pt-2 border-t border-neutral-200/60 dark:border-neutral-800 flex items-center justify-between text-[10px] text-neutral-500">
+                        <span>{isBn ? "• মান ক্লিক করে সাইজ সিলেক্ট করুন" : "• Click any row to select size"}</span>
+                        <a
+                          href="/size-guide"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-bold underline text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white"
+                        >
+                          {isBn ? "পূর্ণ সাইজ গাইড →" : "Full Guide →"}
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -3,32 +3,54 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Heart, ShoppingBag, ArrowRight, Camera } from "lucide-react";
+import { ShoppingBag, ArrowRight, Camera } from "lucide-react";
+import { useGetProductsQuery } from "@/redux/api/productApi";
 import { UGC_POSTS } from "./homeData";
-import { useTranslation, useCurrency, toBengaliDigits } from "@/lib/i18n";
+import { useTranslation, useCurrency } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-const UGC_IMAGES: Record<string, string> = {
-  "ugc-1":
-    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
-  "ugc-2":
-    "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop&q=80",
-  "ugc-3":
-    "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80",
-  "ugc-4":
-    "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&auto=format&fit=crop&q=80",
-};
+const UGC_CREATORS = [
+  {
+    id: "ugc-1",
+    handle: "@zayan.fits",
+    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
+    caption: "Subtle cuts, unreal weight. The 380 GSM drop is elite. #ZEVON_BD",
+    pinX: 50,
+    pinY: 50,
+  },
+  {
+    id: "ugc-2",
+    handle: "@nabilastyle",
+    image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop&q=80",
+    caption: "Monochrome elegance for the weekend coffee run ✨ #ZEVON_WOMEN",
+    pinX: 50,
+    pinY: 50,
+  },
+  {
+    id: "ugc-3",
+    handle: "@fahim_street",
+    image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80",
+    caption: "Daily essentials locked in. Heavy loopback hoodie is unmatched.",
+    pinX: 50,
+    pinY: 50,
+  },
+  {
+    id: "ugc-4",
+    handle: "@maliha.t",
+    image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&auto=format&fit=crop&q=80",
+    caption: "Structured wide-leg trousers from @ZEVON_BD — perfection in every stitch.",
+    pinX: 50,
+    pinY: 50,
+  },
+];
 
 export function ShoppableUGC() {
   const { t, isBn } = useTranslation();
   const { formatPrice } = useCurrency();
-  const [activePin, setActivePin] = useState<string | null>("ugc-2"); // Default open ugc-2 as seen in reference image
-  const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
+  const { data: productsData } = useGetProductsQuery({ limit: 4, sortBy: "popular" });
 
-  const handleToggleLike = (postId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setLikedPosts((prev) => ({ ...prev, [postId]: !prev[postId] }));
-  };
+  const [activePin, setActivePin] = useState<string | null>("ugc-2");
+  const serverProducts = productsData?.products || [];
 
   return (
     <section className="py-16 sm:py-24 bg-white dark:bg-neutral-950 border-t border-neutral-200/70 dark:border-neutral-800">
@@ -58,21 +80,31 @@ export function ShoppableUGC() {
 
         {/* Shoppable 4-Column Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {UGC_POSTS.map((post) => {
-            const isPinActive = activePin === post.id;
-            const isLiked = likedPosts[post.id];
-            const currentLikes = isLiked ? post.likes + 1 : post.likes;
+          {UGC_CREATORS.map((creator, idx) => {
+            const isPinActive = activePin === creator.id;
+
+            // Link to real database product if available
+            const linkedProduct = serverProducts[idx] || null;
+            const fallbackUgc = (UGC_POSTS && UGC_POSTS[idx]) ? UGC_POSTS[idx] : UGC_POSTS?.[0];
+
+            const productName = linkedProduct?.title || fallbackUgc?.taggedProduct?.name || "Streetwear Drop";
+            const productPrice = linkedProduct
+              ? Number(linkedProduct.discountPrice || linkedProduct.basePrice)
+              : (fallbackUgc?.taggedProduct?.price ?? 2500);
+            const productHref = linkedProduct
+              ? `/products/${linkedProduct.slug}`
+              : (fallbackUgc?.taggedProduct?.href || "/shop");
 
             return (
               <div
-                key={post.id}
+                key={creator.id}
                 className="group relative rounded-3xl overflow-hidden bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-md hover:shadow-2xl transition-all duration-300"
               >
                 {/* Image Frame with Hotspot Pin */}
                 <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-900">
                   <img
-                    src={UGC_IMAGES[post.id]}
-                    alt={post.caption}
+                    src={creator.image}
+                    alt={creator.caption}
                     className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
                   />
@@ -83,33 +115,18 @@ export function ShoppableUGC() {
                   {/* Top Creator Handle Badge */}
                   <div className="absolute top-3.5 left-3.5 z-10">
                     <span className="text-xs font-bold text-white bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-xs">
-                      {post.handle}
+                      {creator.handle}
                     </span>
                   </div>
 
-                  {/* Likes Count Pill */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleToggleLike(post.id, e)}
-                    className="absolute top-3.5 right-3.5 z-10 flex items-center gap-1.5 text-xs font-bold text-white bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-xs hover:bg-black/80 transition-all cursor-pointer"
-                  >
-                    <Heart
-                      className={cn(
-                        "h-3.5 w-3.5 transition-colors",
-                        isLiked ? "fill-rose-500 text-rose-500" : "fill-rose-500 text-rose-500"
-                      )}
-                    />
-                    <span>{isBn ? toBengaliDigits(currentLikes.toLocaleString()) : currentLikes.toLocaleString()}</span>
-                  </button>
-
                   {/* Interactive Hotspot Pulsating Pin */}
                   <div
-                    className="absolute z-20 cursor-pointer"
+                    className="absolute z-20 cursor-pointer -translate-x-1/2 -translate-y-1/2"
                     style={{
-                      left: `${post.taggedProduct.x}%`,
-                      top: `${post.taggedProduct.y}%`,
+                      left: `${creator.pinX}%`,
+                      top: `${creator.pinY}%`,
                     }}
-                    onClick={() => setActivePin(isPinActive ? null : post.id)}
+                    onClick={() => setActivePin(isPinActive ? null : creator.id)}
                   >
                     <div className="relative flex items-center justify-center">
                       <span className="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-white/60 opacity-75" />
@@ -131,14 +148,14 @@ export function ShoppableUGC() {
                         {t("ugc.shopTheLook", "SHOP THIS LOOK")}
                       </span>
                       <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">
-                        {post.taggedProduct.name}
+                        {productName}
                       </p>
                       <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                         <span className="text-xs font-black text-neutral-950 dark:text-white">
-                          {formatPrice(post.taggedProduct.price)}
+                          {formatPrice(productPrice)}
                         </span>
                         <Link
-                          href={post.taggedProduct.href}
+                          href={productHref}
                           className="text-[10px] font-black uppercase tracking-wider bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 px-2.5 py-1 rounded-lg hover:opacity-90 transition-opacity shadow-xs"
                         >
                           {isBn ? "ড্রপ দেখুন" : "VIEW DROP"}
@@ -150,7 +167,7 @@ export function ShoppableUGC() {
                   {/* Bottom Caption in Quotes */}
                   <div className="absolute bottom-4 left-4 right-4 text-white text-xs z-10">
                     <p className="line-clamp-2 font-medium opacity-95 leading-relaxed drop-shadow-sm">
-                      &ldquo;{post.caption}&rdquo;
+                      &ldquo;{creator.caption}&rdquo;
                     </p>
                   </div>
                 </div>
@@ -162,3 +179,4 @@ export function ShoppableUGC() {
     </section>
   );
 }
+

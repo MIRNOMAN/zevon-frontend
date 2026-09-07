@@ -123,6 +123,26 @@ export function CheckoutView() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [validateCoupon, { isLoading: isValidatingCoupon }] = useValidateCouponMutation();
 
+  // Auto-apply recovery promo code if passed in URL query param (e.g. /checkout?coupon=RECOVER-XXXX)
+  useEffect(() => {
+    const urlCoupon = searchParams.get("coupon");
+    if (urlCoupon && !appliedCoupon && cartSubtotal > 0) {
+      validateCoupon({
+        code: urlCoupon.trim(),
+        cartSubtotal,
+      })
+        .unwrap()
+        .then((res) => {
+          if (res.data) {
+            setAppliedCoupon(res.data);
+          }
+        })
+        .catch(() => {
+          // Ignore invalid param silently
+        });
+    }
+  }, [searchParams, cartSubtotal, appliedCoupon, validateCoupon]);
+
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!couponCodeInput.trim()) return;

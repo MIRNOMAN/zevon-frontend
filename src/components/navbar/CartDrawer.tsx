@@ -363,14 +363,24 @@ export function CartDrawer() {
               </div>
 
               {/* Checkout Action Button */}
-              <Link
-                href="/checkout"
-                onClick={closeCart}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-950 dark:bg-white py-3 px-4 text-xs sm:text-sm font-bold text-white dark:text-neutral-950 shadow-lg shadow-neutral-900/10 hover:opacity-95 active:scale-[0.99] transition-all"
-              >
-                <span>{t("cart.checkout", "Proceed to Checkout")}</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/checkout"
+                  onClick={closeCart}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-950 dark:bg-white py-3 px-4 text-xs sm:text-sm font-bold text-white dark:text-neutral-950 shadow-lg shadow-neutral-900/10 hover:opacity-95 active:scale-[0.99] transition-all"
+                >
+                  <span>{t("cart.checkout", "Proceed to Checkout")}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+
+                <Link
+                  href="/cart"
+                  onClick={closeCart}
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 py-2.5 px-4 text-xs font-bold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                >
+                  <span>{isBn ? "সম্পূর্ণ ব্যাগ দেখুন" : "View Full Bag"}</span>
+                </Link>
+              </div>
 
               <div className="flex items-center justify-center gap-2 text-[10px] text-neutral-400 pt-1">
                 <ShieldCheck className="h-3 w-3 text-emerald-500" />

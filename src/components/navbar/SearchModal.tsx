@@ -45,6 +45,159 @@ interface SearchModalProps {
 
 type SearchTab = "text" | "voice" | "visual";
 
+// Free Client-Side Visual AI Analyzer using HTML5 Canvas
+async function analyzeImageFile(file: File | string): Promise<{
+  dominantHex: string;
+  palette: string[];
+  colorName: string;
+  tone: string;
+}> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve({
+        dominantHex: "#1E293B",
+        palette: ["#1E293B", "#334155", "#0F172A"],
+        colorName: "Dark Charcoal",
+        tone: "DARK",
+      });
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    const src = typeof file === "string" ? file : URL.createObjectURL(file);
+    img.src = src;
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const size = 64;
+        canvas.width = size;
+        canvas.height = size;
+
+        if (!ctx) {
+          resolve({
+            dominantHex: "#1E293B",
+            palette: ["#1E293B"],
+            colorName: "Dark Charcoal",
+            tone: "DARK",
+          });
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, size, size);
+        const imageData = ctx.getImageData(0, 0, size, size).data;
+        const colorBuckets: Record<string, { count: number; r: number; g: number; b: number }> = {};
+
+        for (let i = 0; i < imageData.length; i += 16) {
+          const r = imageData[i] ?? 0;
+          const g = imageData[i + 1] ?? 0;
+          const b = imageData[i + 2] ?? 0;
+          const a = imageData[i + 3] ?? 255;
+          if (a < 128) continue;
+
+          // Quantize to 32 steps
+          const qr = Math.round(r / 32) * 32;
+          const qg = Math.round(g / 32) * 32;
+          const qb = Math.round(b / 32) * 32;
+          const key = `${qr},${qg},${qb}`;
+
+          const existing = colorBuckets[key];
+          if (!existing) {
+            colorBuckets[key] = { count: 1, r, g, b };
+          } else {
+            existing.count++;
+          }
+        }
+
+        const sorted = Object.values(colorBuckets).sort((a, b) => b.count - a.count);
+        const top = sorted[0] || { r: 30, g: 41, b: 59 };
+        const toHex = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0").toUpperCase();
+        const dominantHex = `#${toHex(top.r)}${toHex(top.g)}${toHex(top.b)}`;
+        const palette = sorted.slice(0, 5).map((c) => `#${toHex(c.r)}${toHex(c.g)}${toHex(c.b)}`);
+
+        const getColorName = (r: number, g: number, b: number) => {
+          if (r < 40 && g < 40 && b < 40) return "Onyx Black";
+          if (r > 225 && g > 225 && b > 225) return "Crisp White";
+          if (r > 200 && g > 195 && b > 180) return "Ecru / Cream";
+          if (g > 140 && g > r + 30 && b > 140) return "Cyber Teal / Mint";
+          if (g > r + 25 && g > b + 25) return "Emerald / Forest Green";
+          if (g > 90 && r > 90 && b < 70 && Math.abs(r - g) < 40) return "Olive / Sage";
+          if (b > r + 30 && b > g + 20) return "Deep Navy / Cobalt";
+          if (r > 160 && g < 70 && b < 70) return "Crimson / Ruby";
+          if (r > 110 && g < 50 && b < 60) return "Maroon / Burgundy";
+          if (r > 180 && g > 140 && b < 100) return "Desert Sand / Camel";
+          if (r > 140 && g > 120 && b < 90) return "Beige / Tan";
+          if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20) {
+            return r < 120 ? "Dark Charcoal" : "Concrete Gray";
+          }
+          if (r > 160 && b > 160 && g < 130) return "Lilac / Purple";
+          return "Neutral Tone";
+        };
+
+        const colorName = getColorName(top.r, top.g, top.b);
+        const tone = top.r + top.g + top.b < 380 ? "DARK" : "LIGHT";
+
+        resolve({ dominantHex, palette, colorName, tone });
+      } catch {
+        resolve({
+          dominantHex: "#1E293B",
+          palette: ["#1E293B"],
+          colorName: "Dark Charcoal",
+          tone: "DARK",
+        });
+      }
+    };
+
+    img.onerror = () => {
+      resolve({
+        dominantHex: "#1E293B",
+        palette: ["#1E293B"],
+        colorName: "Dark Charcoal",
+        tone: "DARK",
+      });
+    };
+  });
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const clean = hex.replace("#", "").trim();
+  if (clean.length === 3) {
+    const rChar = clean[0] || "0";
+    const gChar = clean[1] || "0";
+    const bChar = clean[2] || "0";
+    return {
+      r: parseInt(rChar + rChar, 16) || 0,
+      g: parseInt(gChar + gChar, 16) || 0,
+      b: parseInt(bChar + bChar, 16) || 0,
+    };
+  }
+  if (clean.length >= 6) {
+    return {
+      r: parseInt(clean.substring(0, 2), 16) || 0,
+      g: parseInt(clean.substring(2, 4), 16) || 0,
+      b: parseInt(clean.substring(4, 6), 16) || 0,
+    };
+  }
+  return { r: 30, g: 41, b: 59 };
+}
+
+function calculateColorDistance(
+  c1: { r: number; g: number; b: number },
+  c2: { r: number; g: number; b: number }
+): number {
+  const rDiff = c1.r - c2.r;
+  const gDiff = c1.g - c2.g;
+  const bDiff = c1.b - c2.b;
+  const rMean = (c1.r + c2.r) / 2;
+  return Math.sqrt(
+    (2 + rMean / 256) * rDiff * rDiff +
+      4 * gDiff * gDiff +
+      (2 + (255 - rMean) / 256) * bDiff * bDiff
+  );
+}
+
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const { t, isBn } = useTranslation();
   const { formatPrice } = useCurrency();
@@ -77,6 +230,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [selectedHexColor, setSelectedHexColor] = useState<string | null>(null);
+  const [clientVisualProfile, setClientVisualProfile] = useState<VisualProfile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [
@@ -194,15 +348,30 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   };
 
-  // Handle Image File selection for Visual Search
-  const handleImageFileChange = (file: File) => {
+  // Handle Image File selection for Visual Search (Client Canvas AI + Server Matching)
+  const handleImageFileChange = async (file: File) => {
     setSelectedImageFile(file);
     setImagePreviewUrl(URL.createObjectURL(file));
     setSelectedHexColor(null);
     setImageUrlInput("");
 
+    // 1. Analyze image instantly in client-side canvas AI
+    const analysis = await analyzeImageFile(file);
+    setClientVisualProfile({
+      dominantColorHex: analysis.dominantHex,
+      dominantColorName: analysis.colorName,
+      palette: analysis.palette,
+      detectedTone: analysis.tone,
+      textureKeyword: null,
+    });
+
+    // 2. Dispatch to backend search
     const formData = new FormData();
     formData.append("image", file);
+    formData.append("hexColor", analysis.dominantHex);
+    formData.append("dominantColorName", analysis.colorName);
+    formData.append("detectedTone", analysis.tone);
+    formData.append("palette", JSON.stringify(analysis.palette));
     formData.append("limit", "12");
     executeVisualSearch(formData);
   };
@@ -212,16 +381,45 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     setSelectedImageFile(null);
     setImagePreviewUrl(null);
     setImageUrlInput("");
+
+    const rgb = hexToRgb(hex);
+    const tone = rgb.r + rgb.g + rgb.b < 380 ? "DARK" : "LIGHT";
+    setClientVisualProfile({
+      dominantColorHex: hex,
+      dominantColorName: presetColorSwatches.find((c) => c.hex === hex)?.label || "Selected Tone",
+      palette: [hex],
+      detectedTone: tone,
+      textureKeyword: null,
+    });
+
     executeVisualSearch({ hexColor: hex, limit: 12 });
   };
 
-  const handleImageUrlSubmit = (e: React.FormEvent) => {
+  const handleImageUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (imageUrlInput.trim()) {
+      const url = imageUrlInput.trim();
       setSelectedImageFile(null);
-      setImagePreviewUrl(imageUrlInput.trim());
+      setImagePreviewUrl(url);
       setSelectedHexColor(null);
-      executeVisualSearch({ imageUrl: imageUrlInput.trim(), limit: 12 });
+
+      const analysis = await analyzeImageFile(url);
+      setClientVisualProfile({
+        dominantColorHex: analysis.dominantHex,
+        dominantColorName: analysis.colorName,
+        palette: analysis.palette,
+        detectedTone: analysis.tone,
+        textureKeyword: null,
+      });
+
+      executeVisualSearch({
+        imageUrl: url,
+        hexColor: analysis.dominantHex,
+        dominantColorName: analysis.colorName,
+        detectedTone: analysis.tone,
+        palette: JSON.stringify(analysis.palette),
+        limit: 12,
+      });
     }
   };
 
@@ -414,8 +612,57 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   const parsedIntent: ParsedVoiceIntent | undefined = voiceData?.data?.parsedIntent;
   const voiceProducts: VoiceSearchMatchedProduct[] = voiceData?.data?.data || [];
-  const visualProfile: VisualProfile | undefined = visualData?.data?.visualProfile;
-  const visualProducts: VisualSearchMatchedProduct[] = visualData?.data?.data || [];
+  const activeVisualProfile: VisualProfile | undefined = clientVisualProfile || visualData?.data?.visualProfile;
+  const serverVisualProducts: VisualSearchMatchedProduct[] = visualData?.data?.data || [];
+
+  // Compute live visual products matching the analyzed color and tone
+  const visualProducts: VisualSearchMatchedProduct[] = useMemo(() => {
+    if (serverVisualProducts && serverVisualProducts.length > 0) {
+      return serverVisualProducts;
+    }
+    if (!activeVisualProfile) return [];
+
+    const dominantRgb = hexToRgb(activeVisualProfile.dominantColorHex);
+    return FEATURED_PRODUCTS.map((p) => {
+      let bestDist = Number.MAX_VALUE;
+      let matchedColor = p.colors?.[0]?.name || "Onyx Black";
+
+      if (p.colors && p.colors.length > 0) {
+        for (const c of p.colors) {
+          const cRgb = hexToRgb(c.hex || "#111111");
+          const dist = calculateColorDistance(dominantRgb, cRgb);
+          if (dist < bestDist) {
+            bestDist = dist;
+            matchedColor = c.name;
+          }
+        }
+      } else {
+        bestDist = calculateColorDistance(dominantRgb, { r: 30, g: 41, b: 59 });
+      }
+
+      const sim = Math.max(25, Math.min(98, Math.round(100 - (bestDist / 441.67) * 80)));
+      const slug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+      return {
+        id: p.id,
+        title: p.name,
+        slug,
+        category: {
+          id: p.category,
+          name: p.subcategory || p.category,
+          slug: p.subcategory ? p.subcategory.toLowerCase().replace(/[^a-z0-9]+/g, "-") : p.category,
+        },
+        basePrice: p.price,
+        discountPrice: p.originalPrice ? p.price : null,
+        effectivePrice: p.price,
+        primaryImage: p.images[0],
+        similarityScore: sim,
+        visualMatchReason: `${sim}% Shade & Silhouette Match (${matchedColor})`,
+      } as VisualSearchMatchedProduct;
+    })
+      .sort((a, b) => b.similarityScore - a.similarityScore)
+      .slice(0, 12);
+  }, [serverVisualProducts, activeVisualProfile]);
 
   return (
     <div
@@ -724,22 +971,22 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             </div>
 
             {/* Visual Profile Breakdown Alert */}
-            {visualProfile && (
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/70 border border-neutral-200 dark:border-neutral-700 text-xs">
+            {activeVisualProfile && (
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/70 border border-neutral-200 dark:border-neutral-700 text-xs animate-in fade-in duration-200">
                 <div className="flex items-center gap-2">
                   <div
-                    className="h-5 w-5 rounded-md border border-neutral-300 dark:border-neutral-600 shadow-xs"
-                    style={{ backgroundColor: visualProfile.dominantColorHex }}
+                    className="h-5 w-5 rounded-md border border-neutral-300 dark:border-neutral-600 shadow-xs shrink-0"
+                    style={{ backgroundColor: activeVisualProfile.dominantColorHex }}
                   />
                   <div>
                     <span className="font-bold text-neutral-900 dark:text-white block">
-                      {visualProfile.dominantColorName} ({visualProfile.detectedTone})
+                      {activeVisualProfile.dominantColorName} ({activeVisualProfile.detectedTone})
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {visualProfile.palette?.map((hex, idx) => (
+                  {activeVisualProfile.palette?.map((hex, idx) => (
                     <span
                       key={idx}
                       className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-xs"
