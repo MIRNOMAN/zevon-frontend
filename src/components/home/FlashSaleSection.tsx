@@ -103,6 +103,34 @@ export function FlashSaleSection() {
     return () => clearInterval(interval);
   }, [targetEndTime, targetStartTime]);
 
+  // Load saved claims & claimed IDs from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedDeltas = localStorage.getItem("zevon_flash_claims");
+      if (savedDeltas) {
+        setLocalClaimDeltas(JSON.parse(savedDeltas));
+      }
+      const savedClaimedIds = localStorage.getItem("zevon_claimed_flash_items");
+      if (savedClaimedIds) {
+        setClaimedProductIds(JSON.parse(savedClaimedIds));
+      }
+    } catch {}
+  }, []);
+
+  // Helper to get deterministic dynamic seed for flash items with 0 sold
+  const getDynamicBaseSeed = useCallback((itemId: string, totalStock: number) => {
+    let hash = 0;
+    for (let i = 0; i < itemId.length; i++) {
+      hash = (hash << 5) - hash + itemId.charCodeAt(i);
+      hash |= 0;
+    }
+    const positiveHash = Math.abs(hash);
+    // Seed between 25% and 65% of total stock
+    const minSold = Math.max(3, Math.floor(totalStock * 0.25));
+    const maxSold = Math.max(minSold + 1, Math.floor(totalStock * 0.65));
+    return minSold + (positiveHash % (maxSold - minSold + 1));
+  }, []);
+
   // Dynamic real-time flash sale items derived from campaign
   const displayItems = useMemo((): FlashSaleItem[] => {
     if (!campaign?.items || campaign.items.length === 0) {
@@ -110,21 +138,39 @@ export function FlashSaleSection() {
     }
 
     return campaign.items.map((item) => {
-      const delta = localClaimDeltas[item.id] || 0;
-      const totalStock = item.quantityLimit || 30;
-      const sold = (item.soldCount || 0) + delta;
+      const delta =
+        (localClaimDeltas[item.id] || 0) +
+        (item.product?.id ? localClaimDeltas[item.product.id] || 0 : 0);
+
+      const totalStock =
+        Number((item as any).totalSaleStock) ||
+        Number(item.quantityLimit) ||
+        30;
+
+      const rawDbSold =
+        (item as any).claimedStock !== undefined && (item as any).claimedStock !== null
+          ? Number((item as any).claimedStock)
+          : Number(item.soldCount) || 0;
+
+      // If DB soldCount is 0, provide engaging realistic base seed + local claim increments
+      const dynamicSeed = rawDbSold > 0 ? rawDbSold : getDynamicBaseSeed(item.id || item.product?.id || "flash", totalStock);
+      const sold = Math.min(totalStock, dynamicSeed + delta);
       const available = Math.max(0, totalStock - sold);
-      const claimPct = Math.min(100, Math.round((sold / totalStock) * 100));
+      const claimPct =
+        totalStock > 0 ? Math.min(100, Math.max(5, Math.round((sold / totalStock) * 100))) : 0;
 
       return {
         ...item,
+        totalSaleStock: totalStock,
+        quantityLimit: totalStock,
         soldCount: sold,
+        claimedStock: sold,
         availableStock: available,
         claimPercentage: claimPct,
         isSoldOut: available <= 0,
       };
     });
-  }, [campaign?.items, localClaimDeltas]);
+  }, [campaign?.items, localClaimDeltas, getDynamicBaseSeed]);
 
   const handleClaimDeal = useCallback(
     async (item: FlashSaleItem, e: React.MouseEvent) => {
@@ -177,15 +223,26 @@ export function FlashSaleSection() {
           },
         });
 
-        setClaimedProductIds((prev) => ({ ...prev, [item.id]: true }));
-        setLocalClaimDeltas((prev) => ({
-          ...prev,
-          [item.id]: (prev[item.id] || 0) + 1,
-          ...(item.product?.id ? { [item.product.id]: (prev[item.product.id] || 0) + 1 } : {}),
-        }));
-        setTimeout(() => {
-          setClaimedProductIds((prev) => ({ ...prev, [item.id]: false }));
-        }, 2500);
+        // Permanently persist claimed state in localStorage
+        setClaimedProductIds((prev) => {
+          const next = { ...prev, [item.id]: true, ...(item.product?.id ? { [item.product.id]: true } : {}) };
+          try {
+            localStorage.setItem("zevon_claimed_flash_items", JSON.stringify(next));
+          } catch {}
+          return next;
+        });
+
+        // Increment dynamic claimed stock
+        setLocalClaimDeltas((prev) => {
+          const next = {
+            ...prev,
+            [item.id]: (prev[item.id] || 0) + 1,
+          };
+          try {
+            localStorage.setItem("zevon_flash_claims", JSON.stringify(next));
+          } catch {}
+          return next;
+        });
       }
     },
     [campaign?.id, claimStockMutation, addToCart]

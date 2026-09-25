@@ -32,7 +32,10 @@ import { useGetAddressesQuery, useCreateAddressMutation, Address } from "@/redux
 import { useValidateCouponMutation, CouponValidationResult } from "@/redux/api/couponApi";
 import { useCalculateShippingMutation, useGetPublicShippingZonesQuery } from "@/redux/api/shippingApi";
 import { useCheckoutMutation, PaymentMethod } from "@/redux/api/orderApi";
-import { useCreateCheckoutSessionMutation } from "@/redux/api/paymentApi";
+import {
+  useCreateCheckoutSessionMutation,
+  useCreateBkashPaymentMutation,
+} from "@/redux/api/paymentApi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -72,12 +75,10 @@ export function CheckoutView() {
   const [postalCode, setPostalCode] = useState("1212");
   const [orderNotes, setOrderNotes] = useState("");
   const [saveAddressToAccount, setSaveAddressToAccount] = useState(true);
-  const [bkashNumber, setBkashNumber] = useState("");
-  const [bkashTrxId, setBkashTrxId] = useState("");
-  const [copiedBkash, setCopiedBkash] = useState(false);
-  const [nagadNumber, setNagadNumber] = useState("");
-  const [nagadTrxId, setNagadTrxId] = useState("");
-  const [copiedNagad, setCopiedNagad] = useState(false);
+
+  // Redirection states for external gateways (Stripe & bKash)
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [redirectTarget, setRedirectTarget] = useState<"STRIPE" | "BKASH" | null>(null);
 
   // Sync initial default address selection
   useEffect(() => {
@@ -182,12 +183,14 @@ export function CheckoutView() {
   const discountAmount = appliedCoupon?.discountAmount || 0;
 
   // ── 4. Payment Method State ──
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("STRIPE");
 
   // ── 5. Order Placement ──
   const [checkoutMutation, { isLoading: isPlacingOrder }] = useCheckoutMutation();
   const [createStripeSession, { isLoading: isCreatingStripeSession }] =
     useCreateCheckoutSessionMutation();
+  const [createBkashSession, { isLoading: isCreatingBkashSession }] =
+    useCreateBkashPaymentMutation();
 
   const [orderSuccessData, setOrderSuccessData] = useState<any | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -229,45 +232,6 @@ export function CheckoutView() {
       return;
     }
 
-    // Validate Mobile Wallet details if BKASH or NAGAD selected
-    if (paymentMethod === "BKASH") {
-      if (!bkashNumber.trim() || bkashNumber.trim().length < 11) {
-        setCheckoutError(
-          isBn
-            ? "অনুগ্রহ করে আপনার সঠিক ১১ ডিজিটের বিকাশ নম্বর প্রদান করুন।"
-            : "Please enter your valid 11-digit bKash wallet number."
-        );
-        return;
-      }
-      if (!bkashTrxId.trim() || bkashTrxId.trim().length < 6) {
-        setCheckoutError(
-          isBn
-            ? "অনুগ্রহ করে বিকাশ পেমেন্টের সঠিক ট্রানজেকশন আইডি (TrxID) প্রদান করুন।"
-            : "Please enter your valid bKash Transaction ID (TrxID)."
-        );
-        return;
-      }
-    }
-
-    if (paymentMethod === "NAGAD") {
-      if (!nagadNumber.trim() || nagadNumber.trim().length < 11) {
-        setCheckoutError(
-          isBn
-            ? "অনুগ্রহ করে আপনার সঠিক ১১ ডিজিটের নগদ নম্বর প্রদান করুন।"
-            : "Please enter your valid 11-digit Nagad wallet number."
-        );
-        return;
-      }
-      if (!nagadTrxId.trim() || nagadTrxId.trim().length < 6) {
-        setCheckoutError(
-          isBn
-            ? "অনুগ্রহ করে নগদ পেমেন্টের সঠিক ট্রানজেকশন আইডি (TrxID) প্রদান করুন।"
-            : "Please enter your valid Nagad Transaction ID (TrxID)."
-        );
-        return;
-      }
-    }
-
     // If authenticated and user checked "Save address" and used new address, save it
     if (isAuthenticated && (useNewAddress || selectedAddressId === "new") && saveAddressToAccount) {
       try {
@@ -284,18 +248,6 @@ export function CheckoutView() {
       } catch {}
     }
 
-    const finalNotes = [
-      orderNotes,
-      paymentMethod === "BKASH" && bkashNumber
-        ? `[bKash Wallet: ${bkashNumber}, TrxID: ${bkashTrxId.trim().toUpperCase()}]`
-        : "",
-      paymentMethod === "NAGAD" && nagadNumber
-        ? `[Nagad Wallet: ${nagadNumber}, TrxID: ${nagadTrxId.trim().toUpperCase()}]`
-        : "",
-    ]
-      .filter(Boolean)
-      .join(" | ");
-
     const payload = {
       shippingAddress: {
         fullName,
@@ -308,20 +260,24 @@ export function CheckoutView() {
       deliveryType,
       couponCode: appliedCoupon?.coupon?.code || (appliedCoupon as any)?.code || undefined,
       paymentMethod,
-      notes: finalNotes || undefined,
+      notes: orderNotes.trim() || undefined,
     };
 
     try {
+      if (paymentMethod === "STRIPE" || paymentMethod === "BKASH") {
+        setIsRedirecting(true);
+        setRedirectTarget(paymentMethod);
+      }
+
       const res = await checkoutMutation(payload).unwrap();
       const placedOrder = res.data;
 
       if (placedOrder) {
-        // Clear purchased items from wishlist and cart
+        // Clear purchased items from wishlist
         const purchasedProductIds = items
           .map((i) => i.product?.id || i.product?.slug || i.variant?.id)
           .filter(Boolean) as string[];
         clearPurchasedItems(purchasedProductIds);
-        await clearCart();
 
         // If Stripe payment selected, initiate session & redirect
         if (paymentMethod === "STRIPE") {
@@ -334,26 +290,62 @@ export function CheckoutView() {
 
             const redirectUrl = stripeRes?.data?.sessionUrl || stripeRes?.data?.url;
             if (redirectUrl) {
-              window.location.href = redirectUrl;
+              await clearCart();
+              window.location.assign(redirectUrl);
               return;
             } else {
               throw new Error("Stripe checkout session URL was not returned.");
             }
           } catch (stripeErr: any) {
+            setIsRedirecting(false);
+            setRedirectTarget(null);
             const errMsg =
               stripeErr?.data?.message ||
               stripeErr?.message ||
               (isBn
-                ? "Stripe পেমেন্ট শুরু করা যায়নি। অনুগ্রহ করে বিকাশ, নগদ বা ক্যাশ অন ডেলিভারি সিলেক্ট করুন।"
-                : "Unable to initiate Stripe payment gateway. Please select bKash, Nagad, or Cash on Delivery.");
+                ? "Stripe কার্ড পেমেন্ট শুরু করা যায়নি। অনুগ্রহ করে বিকাশ বা ক্যাশ অন ডেলিভারি সিলেক্ট করুন।"
+                : "Unable to initiate Stripe payment gateway. Please select bKash or Cash on Delivery.");
             setCheckoutError(errMsg);
             return;
           }
         }
 
+        // If bKash payment selected, initiate bKash PGW & redirect
+        if (paymentMethod === "BKASH") {
+          try {
+            const bkashRes = await createBkashSession({
+              orderId: placedOrder.id,
+              callbackUrl: `${window.location.origin}/order/success?order_id=${placedOrder.id}&order_success=${placedOrder.orderNumber}`,
+            }).unwrap();
+
+            const redirectUrl = bkashRes?.data?.bkashURL;
+            if (redirectUrl) {
+              await clearCart();
+              window.location.assign(redirectUrl);
+              return;
+            } else {
+              throw new Error("bKash payment gateway URL was not returned.");
+            }
+          } catch (bkashErr: any) {
+            setIsRedirecting(false);
+            setRedirectTarget(null);
+            const errMsg =
+              bkashErr?.data?.message ||
+              bkashErr?.message ||
+              (isBn
+                ? "bKash পেমেন্ট গেটওয়ে শুরু করা যায়নি। অনুগ্রহ করে কার্ড বা ক্যাশ অন ডেলিভারি সিলেক্ট করুন।"
+                : "Unable to initiate bKash payment gateway. Please select Card or Cash on Delivery.");
+            setCheckoutError(errMsg);
+            return;
+          }
+        }
+
+        await clearCart();
         setOrderSuccessData(placedOrder);
       }
     } catch (err: any) {
+      setIsRedirecting(false);
+      setRedirectTarget(null);
       const msg =
         err?.data?.message ||
         err?.message ||
@@ -366,6 +358,42 @@ export function CheckoutView() {
 
   // Check query params for redirected Stripe success
   const orderSuccessParam = searchParams.get("order_success");
+
+  // ── Redirecting Screen (for Stripe / bKash PGW transfer) ──
+  if (isRedirecting) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center py-16 px-4 bg-neutral-50/50 dark:bg-neutral-950/40">
+        <div className="max-w-md w-full bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-3xl p-8 sm:p-10 text-center shadow-2xl space-y-6 animate-in zoom-in-95">
+          <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800">
+            {redirectTarget === "STRIPE" ? (
+              <CreditCard className="h-10 w-10 text-blue-600 animate-pulse" />
+            ) : (
+              <span className="text-2xl font-black text-pink-600 animate-pulse">bKash</span>
+            )}
+            <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-neutral-400 dark:border-neutral-600 animate-spin" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-xl font-black text-neutral-950 dark:text-white">
+              {redirectTarget === "STRIPE"
+                ? isBn ? "Stripe কার্ড গেটওয়েতে রিডাইরেক্ট হচ্ছে..." : "Redirecting to Stripe Gateway..."
+                : isBn ? "bKash গেটওয়েতে রিডাইরেক্ট হচ্ছে..." : "Redirecting to bKash Gateway..."}
+            </h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+              {isBn
+                ? "নিরাপদ পেমেন্ট পেজ লোড হচ্ছে। দয়া করে ব্রাউজার বন্ধ বা রিফ্রেশ করবেন না..."
+                : "Securing your transaction and opening payment gateway. Please do not refresh or leave this page..."}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+            <ShieldCheck className="h-4 w-4 shrink-0" />
+            <span>{isBn ? "২৫৬-বিট এনক্রিপ্টেড ও ১০০% সুরক্ষিত" : "256-Bit SSL Encrypted & Protected"}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── Success Confirmation Screen ──
   if (orderSuccessData || orderSuccessParam) {
@@ -404,23 +432,12 @@ export function CheckoutView() {
               <span className="text-neutral-500">{isBn ? "পেমেন্ট মাধ্যম:" : "Payment Method:"}</span>
               <span className="font-bold text-neutral-900 dark:text-white">
                 {(orderSuccessData?.paymentMethod || paymentMethod) === "BKASH"
-                  ? isBn ? "বিকাশ (যাচাইকরণ প্রক্রিয়াধীন)" : "bKash (Pending Verification)"
-                  : (orderSuccessData?.paymentMethod || paymentMethod) === "NAGAD"
-                  ? isBn ? "নগদ (যাচাইকরণ প্রক্রিয়াধীন)" : "Nagad (Pending Verification)"
+                  ? isBn ? "বিকাশ অনলাইন পেমেন্ট" : "bKash Online Payment"
                   : (orderSuccessData?.paymentMethod || paymentMethod) === "STRIPE"
                   ? isBn ? "Stripe কার্ড পেমেন্ট" : "Stripe Card Payment"
                   : isBn ? "ক্যাশ অন ডেলিভারি (COD)" : "Cash On Delivery (COD)"}
               </span>
             </div>
-
-            {(bkashTrxId || nagadTrxId) && (
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <span className="text-neutral-500">{isBn ? "ট্রানজেকশন আইডি:" : "Transaction ID:"}</span>
-                <span className="font-extrabold text-neutral-900 dark:text-white font-mono uppercase">
-                  {bkashTrxId || nagadTrxId}
-                </span>
-              </div>
-            )}
 
             <div className="flex items-center justify-between text-xs sm:text-sm">
               <span className="text-neutral-500">{isBn ? "আনুমানিক ডেলিভারি:" : "Estimated Delivery:"}</span>
@@ -824,6 +841,92 @@ export function CheckoutView() {
               </div>
 
               <div className="space-y-3">
+                {/* Credit / Debit Card & Stripe */}
+                <div className="space-y-3">
+                  <div
+                    onClick={() => setPaymentMethod("STRIPE")}
+                    className={cn(
+                      "cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between",
+                      paymentMethod === "STRIPE"
+                        ? "border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-950/20 ring-1 ring-blue-500 shadow-xs"
+                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 bg-white dark:bg-neutral-900"
+                    )}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/80">
+                        <CreditCard className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-extrabold text-neutral-950 dark:text-white flex items-center gap-2">
+                          <span>{isBn ? "ক্রেডিট / ডেবিট কার্ড (Stripe Gateway)" : "Credit / Debit Card (Stripe Gateway)"}</span>
+                          <Badge className="bg-blue-600 text-white text-[9px] font-black px-1.5 py-0">INSTANT</Badge>
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {isBn ? "ভিসা, মাস্টারকার্ড, অ্যামেক্স ও সকল আন্তর্জাতিক কার্ড" : "Visa, Mastercard, Amex & Global Cards"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-blue-500 dark:border-blue-400">
+                      {paymentMethod === "STRIPE" && <div className="h-2 w-2 rounded-full bg-blue-500 dark:bg-blue-400" />}
+                    </div>
+                  </div>
+
+                  {/* Stripe Reassurance Box */}
+                  {paymentMethod === "STRIPE" && (
+                    <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 flex items-center gap-3 text-xs text-blue-800 dark:text-blue-300 animate-in fade-in slide-in-from-top-2">
+                      <ShieldCheck className="h-5 w-5 text-blue-500 shrink-0" />
+                      <p className="leading-relaxed text-[11px]">
+                        {isBn
+                          ? "নিরাপদ ২৫৬-বিট SSL এনক্রিপশনের মাধ্যমে Stripe কার্ড গেটওয়ে পেজে আপনাকে নিয়ে যাওয়া হবে যেখানে কার্ড নম্বর ও সিভিভি প্রদান করে পেমেন্ট করতে পারবেন।"
+                          : "Encrypted & secured by Stripe 256-bit SSL. You will be redirected to the official Stripe checkout page to enter your card details safely."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* bKash Payment */}
+                <div className="space-y-3">
+                  <div
+                    onClick={() => setPaymentMethod("BKASH")}
+                    className={cn(
+                      "cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between",
+                      paymentMethod === "BKASH"
+                        ? "border-pink-500 dark:border-pink-400 bg-pink-50/50 dark:bg-pink-950/20 ring-1 ring-pink-500 shadow-xs"
+                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 bg-white dark:bg-neutral-900"
+                    )}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-800/80 font-black text-xs">
+                        bKash
+                      </div>
+                      <div>
+                        <div className="text-sm font-extrabold text-neutral-950 dark:text-white flex items-center gap-2">
+                          <span>{isBn ? "বিকাশ পেমেন্ট (bKash Gateway)" : "bKash Online Payment"}</span>
+                          <Badge className="bg-pink-600 text-white text-[9px] font-black px-1.5 py-0">AUTO PGW</Badge>
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {isBn ? "বিকাশ গেটওয়েতে বিকাশ নম্বর ও পিন দিয়ে সরাসরি পেমেন্ট করুন" : "Direct bKash gateway checkout with OTP & PIN"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-pink-500 dark:border-pink-400">
+                      {paymentMethod === "BKASH" && <div className="h-2 w-2 rounded-full bg-pink-500 dark:bg-pink-400" />}
+                    </div>
+                  </div>
+
+                  {/* bKash Reassurance Box */}
+                  {paymentMethod === "BKASH" && (
+                    <div className="p-4 rounded-2xl bg-pink-50/60 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800/40 flex items-center gap-3 text-xs text-pink-800 dark:text-pink-300 animate-in fade-in slide-in-from-top-2">
+                      <Smartphone className="h-5 w-5 text-pink-500 shrink-0" />
+                      <p className="leading-relaxed text-[11px]">
+                        {isBn
+                          ? "নিরাপদ বিকাশ পেমেন্ট গেটওয়ে পেজে আপনাকে নিয়ে যাওয়া হবে যেখানে সহজেই বিকাশ নম্বর ও পিন দিয়ে অর্ডার সম্পন্ন হবে।"
+                          : "You will be redirected to the official bKash Tokenized payment portal to securely authorize payment."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Cash On Delivery (COD) */}
                 <div
                   onClick={() => setPaymentMethod("COD")}
@@ -850,230 +953,6 @@ export function CheckoutView() {
                   <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-neutral-950 dark:border-white">
                     {paymentMethod === "COD" && <div className="h-2 w-2 rounded-full bg-neutral-950 dark:bg-white" />}
                   </div>
-                </div>
-
-                {/* bKash Payment */}
-                <div className="space-y-3">
-                  <div
-                    onClick={() => setPaymentMethod("BKASH")}
-                    className={cn(
-                      "cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between",
-                      paymentMethod === "BKASH"
-                        ? "border-pink-500 dark:border-pink-400 bg-pink-50/50 dark:bg-pink-950/20 ring-1 ring-pink-500 shadow-xs"
-                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 bg-white dark:bg-neutral-900"
-                    )}
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-800/80 font-black text-xs">
-                        bKash
-                      </div>
-                      <div>
-                        <div className="text-sm font-extrabold text-neutral-950 dark:text-white">
-                          {isBn ? "বিকাশ পেমেন্ট (bKash)" : "bKash Payment"}
-                        </div>
-                        <div className="text-xs text-neutral-500">
-                          {isBn ? "বিকাশ অ্যাপ বা *২৪৭# ডায়াল করে পেমেন্ট করুন" : "Send money / payment via bKash wallet"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-pink-500 dark:border-pink-400">
-                      {paymentMethod === "BKASH" && <div className="h-2 w-2 rounded-full bg-pink-500 dark:bg-pink-400" />}
-                    </div>
-                  </div>
-
-                  {/* bKash Instructions & Inputs */}
-                  {paymentMethod === "BKASH" && (
-                    <div className="p-4 sm:p-5 rounded-2xl bg-pink-50/60 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800/40 space-y-3.5 animate-in fade-in slide-in-from-top-2">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-white dark:bg-neutral-900 border border-pink-200/80 dark:border-pink-800/60 text-xs">
-                        <div>
-                          <span className="text-neutral-500 block text-[11px]">
-                            {isBn ? "বিকাশ সেন্ড মানি / মার্চেন্ট নম্বর:" : "bKash Send Money / Payment Number:"}
-                          </span>
-                          <span className="font-extrabold font-mono text-sm text-pink-600 dark:text-pink-400">
-                            01712-345678
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText("01712345678");
-                            setCopiedBkash(true);
-                            setTimeout(() => setCopiedBkash(false), 2500);
-                          }}
-                          className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-pink-500 text-white font-bold text-[11px] hover:bg-pink-600 transition cursor-pointer"
-                        >
-                          {copiedBkash ? (isBn ? "কপি হয়েছে!" : "Copied!") : (isBn ? "নম্বর কপি করুন" : "Copy Number")}
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1 block">
-                            {isBn ? "আপনার বিকাশ ওয়ালেট নম্বর *" : "Your bKash Wallet Number *"}
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="017XXXXXXXX"
-                            value={bkashNumber}
-                            onChange={(e) => setBkashNumber(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-pink-800 bg-white dark:bg-neutral-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-pink-500 font-mono"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1 block">
-                            {isBn ? "ট্রানজেকশন আইডি (TrxID) *" : "Transaction ID (TrxID) *"}
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="9K38AJ19XZ"
-                            value={bkashTrxId}
-                            onChange={(e) => setBkashTrxId(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-pink-800 bg-white dark:bg-neutral-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-pink-500 font-mono uppercase"
-                          />
-                        </div>
-                      </div>
-
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        {isBn
-                          ? "• উপরে দেওয়া বিকাশ নম্বরে মোট মূল্য পাঠিয়ে ট্রানজেকশন আইডি প্রদান করুন।"
-                          : "• Send the total order amount to the bKash number above and enter your TrxID."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Nagad Payment */}
-                <div className="space-y-3">
-                  <div
-                    onClick={() => setPaymentMethod("NAGAD")}
-                    className={cn(
-                      "cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between",
-                      paymentMethod === "NAGAD"
-                        ? "border-orange-500 dark:border-orange-400 bg-orange-50/50 dark:bg-orange-950/20 ring-1 ring-orange-500 shadow-xs"
-                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 bg-white dark:bg-neutral-900"
-                    )}
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/80 font-black text-xs">
-                        Nagad
-                      </div>
-                      <div>
-                        <div className="text-sm font-extrabold text-neutral-950 dark:text-white">
-                          {isBn ? "নগদ পেমেন্ট (Nagad)" : "Nagad Payment"}
-                        </div>
-                        <div className="text-xs text-neutral-500">
-                          {isBn ? "নগদ অ্যাপ বা *১৬৭# ডায়াল করে পেমেন্ট করুন" : "Send money / payment via Nagad wallet"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-orange-500 dark:border-orange-400">
-                      {paymentMethod === "NAGAD" && <div className="h-2 w-2 rounded-full bg-orange-500 dark:bg-orange-400" />}
-                    </div>
-                  </div>
-
-                  {/* Nagad Instructions & Inputs */}
-                  {paymentMethod === "NAGAD" && (
-                    <div className="p-4 sm:p-5 rounded-2xl bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/40 space-y-3.5 animate-in fade-in slide-in-from-top-2">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-white dark:bg-neutral-900 border border-orange-200/80 dark:border-orange-800/60 text-xs">
-                        <div>
-                          <span className="text-neutral-500 block text-[11px]">
-                            {isBn ? "নগদ সেন্ড মানি / মার্চেন্ট নম্বর:" : "Nagad Send Money / Payment Number:"}
-                          </span>
-                          <span className="font-extrabold font-mono text-sm text-orange-600 dark:text-orange-400">
-                            01712-345678
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText("01712345678");
-                            setCopiedNagad(true);
-                            setTimeout(() => setCopiedNagad(false), 2500);
-                          }}
-                          className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-orange-500 text-white font-bold text-[11px] hover:bg-orange-600 transition cursor-pointer"
-                        >
-                          {copiedNagad ? (isBn ? "কপি হয়েছে!" : "Copied!") : (isBn ? "নম্বর কপি করুন" : "Copy Number")}
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1 block">
-                            {isBn ? "আপনার নগদ ওয়ালেট নম্বর *" : "Your Nagad Wallet Number *"}
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="018XXXXXXXX"
-                            value={nagadNumber}
-                            onChange={(e) => setNagadNumber(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl border border-orange-200 dark:border-orange-800 bg-white dark:bg-neutral-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1 block">
-                            {isBn ? "ট্রানজেকশন আইডি (TrxID) *" : "Transaction ID (TrxID) *"}
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="8M48AJ19XZ"
-                            value={nagadTrxId}
-                            onChange={(e) => setNagadTrxId(e.target.value)}
-                            className="w-full h-10 px-3 rounded-xl border border-orange-200 dark:border-orange-800 bg-white dark:bg-neutral-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono uppercase"
-                          />
-                        </div>
-                      </div>
-
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        {isBn
-                          ? "• উপরে দেওয়া নগদ নম্বরে মোট মূল্য পাঠিয়ে ট্রানজেকশন আইডি প্রদান করুন।"
-                          : "• Send the total order amount to the Nagad number above and enter your TrxID."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Credit / Debit Card & Stripe */}
-                <div className="space-y-3">
-                  <div
-                    onClick={() => setPaymentMethod("STRIPE")}
-                    className={cn(
-                      "cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between",
-                      paymentMethod === "STRIPE"
-                        ? "border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-950/20 ring-1 ring-blue-500 shadow-xs"
-                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 bg-white dark:bg-neutral-900"
-                    )}
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/80">
-                        <CreditCard className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-extrabold text-neutral-950 dark:text-white">
-                          {isBn ? "ক্রেডিট / ডেবিট কার্ড (Stripe Gateway)" : "Credit / Debit Card (Stripe Gateway)"}
-                        </div>
-                        <div className="text-xs text-neutral-500">
-                          {isBn ? "ভিসা, মাস্টারকার্ড, অ্যামেক্স ও আন্তর্জাতিক কার্ড" : "Visa, Mastercard, Amex & Global Cards"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-blue-500 dark:border-blue-400">
-                      {paymentMethod === "STRIPE" && <div className="h-2 w-2 rounded-full bg-blue-500 dark:bg-blue-400" />}
-                    </div>
-                  </div>
-
-                  {/* Stripe Reassurance Box */}
-                  {paymentMethod === "STRIPE" && (
-                    <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 flex items-center gap-3 text-xs text-blue-800 dark:text-blue-300 animate-in fade-in slide-in-from-top-2">
-                      <ShieldCheck className="h-5 w-5 text-blue-500 shrink-0" />
-                      <p className="leading-relaxed text-[11px]">
-                        {isBn
-                          ? "নিরাপদ ২৫৬-বিট SSL এনক্রিপশনের মাধ্যমে Stripe গেটওয়েতে কার্ড পেমেন্ট সম্পন্ন হবে।"
-                          : "Encrypted & secured by Stripe 256-bit SSL. You will be redirected to complete your card transaction safely."}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -1243,25 +1122,75 @@ export function CheckoutView() {
                     </span>
                   </div>
                 </div>
+
+                {/* Selected Payment Method Indicator */}
+                <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs">
+                  <span className="text-neutral-500 font-medium">
+                    {isBn ? "নির্বাচিত পেমেন্ট:" : "Payment Method:"}
+                  </span>
+                  <span className="font-extrabold flex items-center gap-1.5 text-neutral-900 dark:text-neutral-100">
+                    {paymentMethod === "STRIPE" && (
+                      <>
+                        <CreditCard className="h-3.5 w-3.5 text-blue-500" />
+                        <span>{isBn ? "কার্ড (Stripe)" : "Card (Stripe)"}</span>
+                      </>
+                    )}
+                    {paymentMethod === "BKASH" && (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-pink-500" />
+                        <span>bKash</span>
+                      </>
+                    )}
+                    {paymentMethod === "COD" && (
+                      <>
+                        <Banknote className="h-3.5 w-3.5 text-emerald-500" />
+                        <span>{isBn ? "ক্যাশ অন ডেলিভারি" : "Cash On Delivery"}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
               </div>
 
               {/* ── Submit Order Button ── */}
               <Button
                 type="button"
                 onClick={handlePlaceOrder}
-                disabled={isPlacingOrder || isCreatingStripeSession}
-                className="w-full mt-6 h-12 rounded-2xl bg-neutral-950 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-950 font-black text-sm tracking-wide shadow-xl transition-all"
+                disabled={isPlacingOrder || isCreatingStripeSession || isCreatingBkashSession || isRedirecting}
+                className={cn(
+                  "w-full mt-6 h-12 rounded-2xl font-black text-sm tracking-wide shadow-xl transition-all cursor-pointer",
+                  paymentMethod === "STRIPE"
+                    ? "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20"
+                    : paymentMethod === "BKASH"
+                    ? "bg-pink-600 hover:bg-pink-500 text-white shadow-pink-500/20"
+                    : "bg-neutral-950 hover:bg-neutral-900 text-white dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-950"
+                )}
               >
-                {isPlacingOrder || isCreatingStripeSession ? (
-                  <div className="flex items-center gap-2">
+                {isCreatingStripeSession || (isRedirecting && redirectTarget === "STRIPE") ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>{isBn ? "Stripe কার্ড গেটওয়েতে রিডাইরেক্ট হচ্ছে..." : "Redirecting to Stripe Gateway..."}</span>
+                  </div>
+                ) : isCreatingBkashSession || (isRedirecting && redirectTarget === "BKASH") ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>{isBn ? "bKash গেটওয়েতে রিডাইরেক্ট হচ্ছে..." : "Redirecting to bKash..."}</span>
+                  </div>
+                ) : isPlacingOrder ? (
+                  <div className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>{isBn ? "অর্ডার প্রসেস হচ্ছে..." : "Processing Order..."}</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-2">
-                    <span>{isBn ? "অর্ডার নিশ্চিত করুন" : "Place Order"}</span>
-                    <span>•</span>
-                    <span>{formatPrice(grandTotal)}</span>
+                    {paymentMethod === "STRIPE" && <CreditCard className="h-4 w-4" />}
+                    {paymentMethod === "COD" && <Banknote className="h-4 w-4" />}
+                    <span>
+                      {paymentMethod === "STRIPE"
+                        ? isBn ? `কার্ডে পেমেন্ট করুন • ${formatPrice(grandTotal)}` : `Pay with Card (Stripe) • ${formatPrice(grandTotal)}`
+                        : paymentMethod === "BKASH"
+                        ? isBn ? `বিকাশে পেমেন্ট করুন • ${formatPrice(grandTotal)}` : `Pay with bKash • ${formatPrice(grandTotal)}`
+                        : isBn ? `অর্ডার কনফার্ম করুন (ক্যাশ অন ডেলিভারি) • ${formatPrice(grandTotal)}` : `Place Order (Cash On Delivery) • ${formatPrice(grandTotal)}`}
+                    </span>
                   </div>
                 )}
               </Button>

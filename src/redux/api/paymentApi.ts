@@ -32,11 +32,42 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface CreateBkashPaymentInput {
+  orderId: string;
+  callbackUrl?: string;
+}
+
+export interface BkashPaymentResult {
+  paymentID: string;
+  bkashURL: string;
+  orderId: string;
+  orderNumber: string;
+  amount: string;
+  currency: string;
+  status: string;
+}
+
 export const paymentApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createCheckoutSession: builder.mutation<ApiResponse<CheckoutSessionResult>, CreateCheckoutSessionInput>({
       query: (body) => ({
         url: "/payments/checkout-session",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Order", "Payment"],
+    }),
+    createBkashPayment: builder.mutation<ApiResponse<BkashPaymentResult>, CreateBkashPaymentInput>({
+      query: (body) => ({
+        url: "/payments/bkash/create",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Order", "Payment"],
+    }),
+    executeBkashPayment: builder.mutation<ApiResponse<any>, { paymentID: string }>({
+      query: (body) => ({
+        url: "/payments/bkash/execute",
         method: "POST",
         body,
       }),
@@ -61,7 +92,10 @@ export const paymentApi = baseApi.injectEndpoints({
 
 export const {
   useCreateCheckoutSessionMutation,
+  useCreateBkashPaymentMutation,
+  useExecuteBkashPaymentMutation,
   useVerifyPaymentSessionQuery,
   useGetStripeConfigQuery,
 } = paymentApi;
+
 
