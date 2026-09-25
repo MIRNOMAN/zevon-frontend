@@ -73,6 +73,15 @@ export const chatApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (_result, _err, customerId) => [{ type: "Chat", id: customerId }],
     }),
+
+    sendChatMessage: builder.mutation<ApiResponse<ChatMessage>, { content?: string; attachmentUrl?: string; attachmentType?: string; roomId?: string }>({
+      query: (body) => ({
+        url: "/chat/message",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Chat"],
+    }),
   }),
 });
 
@@ -80,4 +89,5 @@ export const {
   useGetChatHistoryQuery,
   useUploadChatAttachmentMutation,
   useMarkChatAsReadMutation,
+  useSendChatMessageMutation,
 } = chatApi;

@@ -8,6 +8,8 @@ import {
   Send,
   Paperclip,
   Image as ImageIcon,
+  FileText,
+  Download,
   Loader2,
   Sparkles,
   User as UserIcon,
@@ -30,6 +32,7 @@ import {
   useGetChatHistoryQuery,
   useUploadChatAttachmentMutation,
   useMarkChatAsReadMutation,
+  useSendChatMessageMutation,
   ChatMessage,
 } from "@/redux/api/chatApi";
 import { useTranslation, toBengaliDigits } from "@/lib/i18n";
@@ -61,6 +64,7 @@ export function FloatingChatWidget() {
 
   const [uploadAttachment, { isLoading: isUploadingFile }] = useUploadChatAttachmentMutation();
   const [markAsRead] = useMarkChatAsReadMutation();
+  const [sendChatMessageMutation] = useSendChatMessageMutation();
 
   // Sync REST history into local state
   useEffect(() => {
@@ -105,6 +109,19 @@ export function FloatingChatWidget() {
 
     socket.on("new_message", (message: ChatMessage) => {
       setLocalMessages((prev) => {
+        // Replace matching optimistic message if any
+        const tempIndex = prev.findIndex(
+          (m) =>
+            m.id.startsWith("temp_") &&
+            m.senderId === message.senderId &&
+            ((m.content && m.content === message.content) ||
+              (m.attachmentUrl && m.attachmentUrl === message.attachmentUrl))
+        );
+        if (tempIndex !== -1) {
+          const updated = [...prev];
+          updated[tempIndex] = message;
+          return updated;
+        }
         if (prev.some((m) => m.id === message.id)) return prev;
         return [...prev, message];
       });
@@ -217,8 +234,8 @@ export function FloatingChatWidget() {
       // Simulated automated Concierge response for guest
       setTimeout(() => {
         const replyContent = isBn
-          ? "ধন্যবাদ আপনার বার্তার জন্য। সম্পূর্ণ লাইভ ও ব্যক্তিগত সহায়তার জন্য অনুগ্রহ করে আপনার অ্যাকাউন্টে সাইন ইন করুন।"
-          : "Thank you for reaching out! To receive 1-on-1 personalized live support and track your chat history, please sign in to your ZEVON account.";
+          ? "লাইভ কাস্টমার সাপোর্ট এবং আপনার বার্তার হিস্ট্রি সংরক্ষণের জন্য অনুগ্রহ করে অ্যাকাউন্টে লগইন করুন।"
+          : "For live 1-on-1 customer support and real-time replies from our agents, please log in to your account.";
 
         const botReply: ChatMessage = {
           id: `bot_${Date.now()}`,
@@ -238,7 +255,7 @@ export function FloatingChatWidget() {
           },
         };
         setLocalMessages((prev) => [...prev, botReply]);
-      }, 800);
+      }, 600);
       return;
     }
 
@@ -261,6 +278,7 @@ export function FloatingChatWidget() {
       content: messageContent || undefined,
       attachmentUrl: uploadedUrl || undefined,
       attachmentType: uploadedType || undefined,
+      roomId: `room_${currentUser.id}`,
     };
 
     // Optimistic message update
@@ -287,13 +305,16 @@ export function FloatingChatWidget() {
     setInputText("");
     removeAttachment();
 
-    // Emit to WebSocket
+    // 1. Emit via WebSocket if connected, otherwise fallback to REST API
     if (socketRef.current?.connected) {
-      socketRef.current.emit("send_message", payload, () => {
-        refetchHistory();
-      });
+      socketRef.current.emit("send_message", payload);
     } else {
-      refetchHistory();
+      try {
+        await sendChatMessageMutation(payload).unwrap();
+        refetchHistory();
+      } catch (apiErr) {
+        console.warn("REST API chat send error:", apiErr);
+      }
     }
   };
 
@@ -457,14 +478,37 @@ export function FloatingChatWidget() {
                           : "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white rounded-bl-xs border border-neutral-200/70 dark:border-neutral-700/60"
                       )}
                     >
-                      {/* Attachment Preview */}
+                      {/* Attachment Preview (Image vs File/PDF) */}
                       {msg.attachmentUrl && (
-                        <div className="rounded-xl overflow-hidden mb-1.5 max-h-48">
-                          <img
-                            src={getAvatarUrl(msg.attachmentUrl) || msg.attachmentUrl}
-                            alt="Attachment"
-                            className="w-full h-auto object-cover rounded-xl"
-                          />
+                        <div className="mb-2">
+                          {msg.attachmentType === "IMAGE" ||
+                          msg.attachmentUrl.match(/\.(jpeg|jpg|png|webp|gif)$/i) ? (
+                            <div className="rounded-xl overflow-hidden max-h-52 max-w-[240px] border border-black/10 dark:border-white/10">
+                              <img
+                                src={getAvatarUrl(msg.attachmentUrl) || msg.attachmentUrl}
+                                alt="Attachment"
+                                className="w-full h-auto object-cover rounded-xl hover:scale-105 transition-transform"
+                              />
+                            </div>
+                          ) : (
+                            <a
+                              href={getAvatarUrl(msg.attachmentUrl) || msg.attachmentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cn(
+                                "flex items-center gap-2 p-2.5 rounded-xl border transition-colors",
+                                isMine
+                                  ? "bg-white/10 text-white border-white/20 hover:bg-white/20 dark:bg-black/10 dark:text-neutral-950 dark:border-black/20"
+                                  : "bg-neutral-100 text-neutral-900 border-neutral-200 dark:bg-neutral-700 dark:text-white dark:border-neutral-600 hover:bg-neutral-200"
+                              )}
+                            >
+                              <FileText className="w-4 h-4 shrink-0" />
+                              <span className="truncate text-xs font-semibold">
+                                {isBn ? "সংযুক্ত ফাইল দেখুন" : "View Attached Document"}
+                              </span>
+                              <Download className="w-3.5 h-3.5 ml-auto shrink-0" />
+                            </a>
+                          )}
                         </div>
                       )}
 

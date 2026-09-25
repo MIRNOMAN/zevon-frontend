@@ -149,8 +149,10 @@ export function FlashSaleSection() {
 
       // Add to cart with flash sale discount price
       if (item.product) {
+        const variant = (item.product as any).variants?.[0];
+        const variantId = variant?.id || item.product.id;
         await addToCart({
-          productVariantId: item.product.id,
+          productVariantId: variantId,
           quantity: 1,
           product: {
             id: item.product.id,
@@ -159,15 +161,18 @@ export function FlashSaleSection() {
             basePrice: item.product.basePrice,
             discountPrice: item.discountPrice,
             price: item.discountPrice,
-            images: item.product.images?.map((i) => i.url) || [],
-            primaryImage: item.product.images?.[0]?.url || "",
+            images: item.product.images?.map((i) => (typeof i === "string" ? i : i.url)) || [],
+            primaryImage:
+              (typeof item.product.images?.[0] === "string"
+                ? item.product.images[0]
+                : item.product.images?.[0]?.url) || "",
             inStock: true,
           } as any,
           variant: {
-            id: item.product.id,
-            size: "L",
-            color: "Standard",
-            extraPrice: 0,
+            id: variantId,
+            size: variant?.size || "Standard",
+            color: variant?.color || "Default",
+            extraPrice: Number(variant?.extraPrice || 0),
             stock: item.availableStock || 10,
           },
         });

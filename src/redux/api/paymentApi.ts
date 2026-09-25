@@ -8,8 +8,16 @@ export interface CreateCheckoutSessionInput {
 
 export interface CheckoutSessionResult {
   sessionId: string;
-  url: string;
+  url?: string;
+  sessionUrl?: string;
   publishableKey?: string;
+}
+
+export interface VerifySessionResult {
+  paid: boolean;
+  status: string;
+  orderId?: string;
+  orderNumber?: string;
 }
 
 export interface StripeConfigResult {
@@ -34,6 +42,13 @@ export const paymentApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Order", "Payment"],
     }),
+    verifyPaymentSession: builder.query<ApiResponse<VerifySessionResult>, string>({
+      query: (sessionId) => ({
+        url: `/payments/verify/${sessionId}`,
+        method: "GET",
+      }),
+      providesTags: ["Payment", "Order"],
+    }),
     getStripeConfig: builder.query<ApiResponse<StripeConfigResult>, void>({
       query: () => ({
         url: "/payments/config",
@@ -46,5 +61,7 @@ export const paymentApi = baseApi.injectEndpoints({
 
 export const {
   useCreateCheckoutSessionMutation,
+  useVerifyPaymentSessionQuery,
   useGetStripeConfigQuery,
 } = paymentApi;
+
