@@ -68,7 +68,7 @@ function LoginForm() {
     setIsGoogleLoading(true);
     setErrorMessage(null);
     const backendUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
+      process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.mirnoman.com/api/v1";
     // Redirect to backend Google OAuth endpoint if configured
     window.location.href = `${backendUrl}/auth/google`;
   };

@@ -72,6 +72,9 @@ export function CheckoutView() {
   const [postalCode, setPostalCode] = useState("1212");
   const [orderNotes, setOrderNotes] = useState("");
   const [saveAddressToAccount, setSaveAddressToAccount] = useState(true);
+  const [bkashNumber, setBkashNumber] = useState("");
+  const [bkashTrxId, setBkashTrxId] = useState("");
+  const [copiedBkash, setCopiedBkash] = useState(false);
 
   // Sync initial default address selection
   useEffect(() => {
@@ -239,6 +242,15 @@ export function CheckoutView() {
       } catch {}
     }
 
+    const finalNotes = [
+      orderNotes,
+      paymentMethod === "BKASH" && bkashNumber
+        ? `[bKash Wallet: ${bkashNumber}${bkashTrxId ? `, TrxID: ${bkashTrxId}` : ""}]`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
     const payload = {
       shippingAddress: {
         fullName,
@@ -251,7 +263,7 @@ export function CheckoutView() {
       deliveryType,
       couponCode: appliedCoupon?.coupon?.code || (appliedCoupon as any)?.code || undefined,
       paymentMethod,
-      notes: orderNotes || undefined,
+      notes: finalNotes || undefined,
     };
 
     try {
@@ -771,59 +783,136 @@ export function CheckoutView() {
                 </div>
 
                 {/* bKash / Mobile Wallet */}
-                <div
-                  onClick={() => setPaymentMethod("BKASH")}
-                  className={cn(
-                    "cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between",
-                    paymentMethod === "BKASH"
-                      ? "border-neutral-950 dark:border-white bg-neutral-50 dark:bg-neutral-800/80 ring-1 ring-neutral-950 dark:ring-white shadow-xs"
-                      : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 bg-white dark:bg-neutral-900"
+                <div className="space-y-3">
+                  <div
+                    onClick={() => setPaymentMethod("BKASH")}
+                    className={cn(
+                      "cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between",
+                      paymentMethod === "BKASH"
+                        ? "border-pink-500 dark:border-pink-400 bg-pink-50/50 dark:bg-pink-950/20 ring-1 ring-pink-500 shadow-xs"
+                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 bg-white dark:bg-neutral-900"
+                    )}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-800/80">
+                        <Smartphone className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-extrabold text-neutral-950 dark:text-white">
+                          {isBn ? "বিকাশ / নগদ / মোবাইল ব্যাংকিং" : "bKash / Nagad / Mobile Banking"}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {isBn ? "মোবাইল ওয়ালেটের মাধ্যমে তাত্ক্ষণিক পেমেন্ট" : "Instant mobile wallet payment gateway"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-pink-500 dark:border-pink-400">
+                      {paymentMethod === "BKASH" && <div className="h-2 w-2 rounded-full bg-pink-500 dark:bg-pink-400" />}
+                    </div>
+                  </div>
+
+                  {/* bKash Instructions & Inputs */}
+                  {paymentMethod === "BKASH" && (
+                    <div className="p-4 sm:p-5 rounded-2xl bg-pink-50/60 dark:bg-pink-950/30 border border-pink-200 dark:border-pink-800/40 space-y-3.5 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-white dark:bg-neutral-900 border border-pink-200/80 dark:border-pink-800/60 text-xs">
+                        <div>
+                          <span className="text-neutral-500 block text-[11px]">
+                            {isBn ? "বিকাশ মার্চেন্ট / পার্সোনাল নম্বর:" : "bKash Send Money / Payment Number:"}
+                          </span>
+                          <span className="font-extrabold font-mono text-sm text-pink-600 dark:text-pink-400">
+                            01700-000001
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText("01700000001");
+                            setCopiedBkash(true);
+                            setTimeout(() => setCopiedBkash(false), 2500);
+                          }}
+                          className="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-pink-500 text-white font-bold text-[11px] hover:bg-pink-600 transition cursor-pointer"
+                        >
+                          {copiedBkash ? (isBn ? "কপি হয়েছে!" : "Copied!") : (isBn ? "নম্বর কপি করুন" : "Copy Number")}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1 block">
+                            {isBn ? "আপনার বিকাশ নম্বর *" : "Your bKash Wallet Number *"}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="017XXXXXXXX"
+                            value={bkashNumber}
+                            onChange={(e) => setBkashNumber(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-pink-800 bg-white dark:bg-neutral-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-pink-500 font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1 block">
+                            {isBn ? "ট্রানজেকশন আইডি (TrxID) *" : "Transaction ID (TrxID) *"}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="9K38AJ19XZ"
+                            value={bkashTrxId}
+                            onChange={(e) => setBkashTrxId(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-pink-200 dark:border-pink-800 bg-white dark:bg-neutral-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-pink-500 font-mono uppercase"
+                          />
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                        {isBn
+                          ? "• উপরে দেওয়া বিকাশ নম্বরে মোট মূল্য পাঠিয়ে ট্রানজেকশন আইডি প্রদান করুন।"
+                          : "• Send the total order amount to the bKash number above and enter your TrxID."}
+                      </p>
+                    </div>
                   )}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-800/80">
-                      <Smartphone className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-extrabold text-neutral-950 dark:text-white">
-                        {isBn ? "বিকাশ / নগদ / মোবাইল ব্যাংকিং" : "bKash / Nagad / Mobile Banking"}
-                      </div>
-                      <div className="text-xs text-neutral-500">
-                        {isBn ? "মোবাইল ওয়ালেটের মাধ্যমে তাত্ক্ষণিক পেমেন্ট" : "Instant mobile wallet payment gateway"}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-neutral-950 dark:border-white">
-                    {paymentMethod === "BKASH" && <div className="h-2 w-2 rounded-full bg-neutral-950 dark:bg-white" />}
-                  </div>
                 </div>
 
                 {/* Credit / Debit Card & Stripe */}
-                <div
-                  onClick={() => setPaymentMethod("STRIPE")}
-                  className={cn(
-                    "cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between",
-                    paymentMethod === "STRIPE"
-                      ? "border-neutral-950 dark:border-white bg-neutral-50 dark:bg-neutral-800/80 ring-1 ring-neutral-950 dark:ring-white shadow-xs"
-                      : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 bg-white dark:bg-neutral-900"
+                <div className="space-y-3">
+                  <div
+                    onClick={() => setPaymentMethod("STRIPE")}
+                    className={cn(
+                      "cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between",
+                      paymentMethod === "STRIPE"
+                        ? "border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-950/20 ring-1 ring-blue-500 shadow-xs"
+                        : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 bg-white dark:bg-neutral-900"
+                    )}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/80">
+                        <CreditCard className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-extrabold text-neutral-950 dark:text-white">
+                          {isBn ? "ক্রেডিট / ডেবিট কার্ড (Stripe Gateway)" : "Credit / Debit Card (Stripe Gateway)"}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {isBn ? "ভিসা, মাস্টারকার্ড, অ্যামেক্স ও আন্তর্জাতিক কার্ড" : "Visa, Mastercard, Amex & Global Cards"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-blue-500 dark:border-blue-400">
+                      {paymentMethod === "STRIPE" && <div className="h-2 w-2 rounded-full bg-blue-500 dark:bg-blue-400" />}
+                    </div>
+                  </div>
+
+                  {/* Stripe Reassurance Box */}
+                  {paymentMethod === "STRIPE" && (
+                    <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 flex items-center gap-3 text-xs text-blue-800 dark:text-blue-300 animate-in fade-in slide-in-from-top-2">
+                      <ShieldCheck className="h-5 w-5 text-blue-500 shrink-0" />
+                      <p className="leading-relaxed text-[11px]">
+                        {isBn
+                          ? "নিরাপদ ২৫৬-বিট SSL এনক্রিপশনের মাধ্যমে Stripe গেটওয়েতে কার্ড পেমেন্ট সম্পন্ন হবে।"
+                          : "Encrypted & secured by Stripe 256-bit SSL. You will be redirected to complete your card transaction safely."}
+                      </p>
+                    </div>
                   )}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/80">
-                      <CreditCard className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-extrabold text-neutral-950 dark:text-white">
-                        {isBn ? "ক্রেডিট / ডেবিট কার্ড (Stripe Gateway)" : "Credit / Debit Card (Stripe Gateway)"}
-                      </div>
-                      <div className="text-xs text-neutral-500">
-                        {isBn ? "ভিসা, মাস্টারকার্ড, অ্যামেক্স ও আন্তর্জাতিক কার্ড" : "Visa, Mastercard, Amex & Global Cards"}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-4 w-4 rounded-full border-2 flex items-center justify-center border-neutral-950 dark:border-white">
-                    {paymentMethod === "STRIPE" && <div className="h-2 w-2 rounded-full bg-neutral-950 dark:bg-white" />}
-                  </div>
                 </div>
               </div>
             </div>

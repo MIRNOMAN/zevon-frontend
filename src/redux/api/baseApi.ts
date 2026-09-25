@@ -20,7 +20,7 @@ const getApiBaseUrl = () => {
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     (process.env.NEXT_PUBLIC_BACKEND_URL
       ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1`
-      : "http://localhost:3000/api/v1");
+      : "https://api.mirnoman.com/api/v1");
 
   url = url.replace(/\/+$/, "");
   if (!url.endsWith("/api/v1")) {

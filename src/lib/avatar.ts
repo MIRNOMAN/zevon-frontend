@@ -6,6 +6,6 @@ export function getAvatarUrl(url?: string | null): string | null {
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
     return url;
   }
-  const backendBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000").replace(/\/api\/v1\/?$/, "");
+  const backendBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.mirnoman.com").replace(/\/api\/v1\/?$/, "");
   return `${backendBase}${url.startsWith("/") ? "" : "/"}${url}`;
 }
