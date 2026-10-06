@@ -1,14 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import type { Product } from "../types/product.types";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { ProductCard3D, Product as Card3DProduct } from "@/components/products/ProductCard3D";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -19,7 +13,7 @@ interface ProductCardProps {
 }
 
 // ---------------------------------------------------------------------------
-// Component
+// Component Adapter
 // ---------------------------------------------------------------------------
 
 export function ProductCard({ product }: ProductCardProps) {
@@ -35,40 +29,55 @@ export function ProductCard({ product }: ProductCardProps) {
       ? product.basePrice
       : parseFloat(String(product.basePrice || 0));
 
+  const originalPriceNum = product.discountPrice
+    ? parseFloat(String(product.basePrice || 0))
+    : undefined;
+
+  const finalPrice = product.discountPrice
+    ? parseFloat(String(product.discountPrice))
+    : priceNum;
+
   const displayName = product.title || product.name || "Product";
 
+  const primaryImgUrl =
+    typeof product.primaryImage === "object" && product.primaryImage?.url
+      ? product.primaryImage.url
+      : typeof product.images?.[0] === "object" && (product.images[0] as any)?.url
+      ? (product.images[0] as any).url
+      : typeof product.images?.[0] === "string"
+      ? product.images[0]
+      : product.image || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80";
+
+  const secondaryImgUrl =
+    typeof product.images?.[1] === "object" && (product.images[1] as any)?.url
+      ? (product.images[1] as any).url
+      : typeof product.images?.[1] === "string"
+      ? product.images[1]
+      : undefined;
+
+  // Convert features product model to ProductCard3D props model
+  const adaptedProduct: Card3DProduct = {
+    id: product.id || product.slug || "prod-id",
+    title: displayName,
+    category: categoryName,
+    price: finalPrice,
+    originalPrice: originalPriceNum,
+    rating: product.rating || product.averageRating || 4.8,
+    reviewsCount: product.reviewCount || 42,
+    image: primaryImgUrl,
+    secondaryImage: secondaryImgUrl,
+    badge: product.isFeatured ? "FEATURED" : undefined,
+    isNew: true,
+    inStock: product.inStock !== false,
+    colors: product.availableColors?.map((c) => ({
+      name: c.color,
+      hex: c.colorCode || "#18181b",
+    })),
+  };
+
   return (
-    <Card className="flex flex-col transition-shadow hover:shadow-md">
-      {/* Image placeholder */}
-      <div className="flex aspect-video items-center justify-center rounded-t-xl bg-foreground/5 text-4xl">
-        📦
-      </div>
-
-      <CardHeader>
-        <div className="mb-1">
-          <span className="inline-block rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wider">
-            {categoryName}
-          </span>
-        </div>
-        <CardTitle>{displayName}</CardTitle>
-        <CardDescription className="line-clamp-2">
-          {product.description}
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="mt-auto">
-        <p className="text-xl font-semibold">
-          ৳{priceNum.toLocaleString()}
-        </p>
-      </CardContent>
-
-      <CardFooter>
-        <Link href={`/products/${product.slug}`} className="w-full">
-          <Button variant="outline" className="w-full">
-            View Details
-          </Button>
-        </Link>
-      </CardFooter>
-    </Card>
+    <Link href={`/products/${product.slug}`} className="block h-full">
+      <ProductCard3D product={adaptedProduct} />
+    </Link>
   );
 }

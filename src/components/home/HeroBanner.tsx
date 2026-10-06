@@ -359,7 +359,7 @@ export function HeroBanner() {
             </div>
 
             {/* Floating Interactive Badge: Top-Left (Organic Cotton) */}
-            <div className="absolute -top-4 -left-3 sm:-left-6 hidden sm:flex items-center gap-2.5 rounded-2xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800 p-3 shadow-xl animate-in zoom-in-90 duration-500">
+            {/* <div className="absolute -top-4 -left-3 sm:-left-6 hidden sm:flex items-center gap-2.5 rounded-2xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800 p-3 shadow-xl animate-in zoom-in-90 duration-500">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white">
                 <ShieldCheck className="h-5 w-5 text-emerald-500" />
               </div>
@@ -371,10 +371,10 @@ export function HeroBanner() {
                   Pre-shrunk &amp; combed
                 </p>
               </div>
-            </div>
+            </div> */}
 
             {/* Floating Interactive Badge: Bottom-Right (Engineered in BD) */}
-            <div className="absolute -bottom-4 -right-3 sm:-right-6 hidden sm:flex items-center gap-2.5 rounded-2xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800 p-3 shadow-xl animate-in zoom-in-90 duration-700">
+            {/* <div className="absolute -bottom-4 -right-3 sm:-right-6 hidden sm:flex items-center gap-2.5 rounded-2xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800 p-3 shadow-xl animate-in zoom-in-90 duration-700">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white">
                 <Compass className="h-5 w-5 text-indigo-500" />
               </div>
@@ -386,7 +386,7 @@ export function HeroBanner() {
                   Global Streetwear Standards
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
