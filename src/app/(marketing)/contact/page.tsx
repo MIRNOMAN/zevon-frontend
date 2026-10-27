@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Contact Atelier & Concierge | ZEVON Bangladesh",
   description:
     "Get in touch with ZEVON customer concierge. Inquire about streetwear archive drops, 380+ GSM specifications, custom orders, or order assistance in Dhaka.",
+  alternates: {
+    canonical: "/contact",
+  },
 };
 
 export default function ContactPage() {

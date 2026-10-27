@@ -44,6 +44,23 @@ const DEFAULT_BANNERS: Banner[] = [
 
 const SLIDE_DURATION = 6500; // 6.5s per slide
 
+function sanitizeBannerUrl(url?: string | null): string {
+  if (!url || typeof url !== "string") return "/shop?filter=new";
+  const trimmed = url.trim();
+  if (
+    !trimmed ||
+    trimmed === "$" ||
+    trimmed === "/$" ||
+    trimmed === "/%24" ||
+    trimmed === "#" ||
+    trimmed === "/undefined" ||
+    trimmed.startsWith("/undefined")
+  ) {
+    return "/shop?filter=new";
+  }
+  return trimmed;
+}
+
 export function HeroBanner() {
   const { t, isBn } = useTranslation();
   const { data: serverBanners, isLoading } = useGetBannersQuery({
@@ -261,7 +278,7 @@ export function HeroBanner() {
             {/* CTA Buttons */}
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
               <Link
-                href={currentBanner.linkUrl || "/shop?filter=new"}
+                href={sanitizeBannerUrl(currentBanner.linkUrl)}
                 className="w-full sm:w-auto"
               >
                 <Button
@@ -348,7 +365,7 @@ export function HeroBanner() {
                     </h3>
                   </div>
                   <Link
-                    href={currentBanner.linkUrl || "/shop?filter=new"}
+                    href={sanitizeBannerUrl(currentBanner.linkUrl)}
                     className="flex h-8 w-8 items-center justify-center shrink-0 rounded-full bg-white text-neutral-950 hover:scale-110 active:scale-95 transition-transform shadow-md"
                     aria-label="Shop this look"
                   >

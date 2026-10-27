@@ -1,11 +1,15 @@
 import React from "react";
+import type { Metadata } from "next";
 import { FlashSaleSection } from "@/components/home/FlashSaleSection";
 import { StorefrontCatalog } from "@/components/shop/StorefrontCatalog";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Seasonal Sale & Flash Drops | ZEVON BD",
   description:
     "Exclusive seasonal markdowns on selected ZEVON SS/26 streetwear drops, oversized t-shirts, minimal co-ord sets, and outer jackets.",
+  alternates: {
+    canonical: "/sale",
+  },
 };
 
 export default function SalePage() {

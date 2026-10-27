@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "About ZEVON | Architectural Streetwear Atelier",
   description:
     "Discover the story of ZEVON Bangladesh. 380+ GSM organic heavyweight cotton, architectural drop-shoulder silhouettes, and generational Bangladeshi craftsmanship.",
+  alternates: {
+    canonical: "/about",
+  },
 };
 
 export default function AboutPage() {

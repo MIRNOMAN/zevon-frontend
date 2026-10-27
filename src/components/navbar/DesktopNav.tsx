@@ -121,7 +121,7 @@ function NavItemsList() {
         return (
           <Link
             key={category.id}
-            href={category.href || "#"}
+            href={category.href && category.href !== "#" && category.href !== "/$" ? category.href : (category.id === "men" ? "/men" : category.id === "women" ? "/women" : "/shop")}
             className={cn(
               "group relative flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold tracking-wide transition-all duration-200 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400",
               category.badgeVariant === "sale"

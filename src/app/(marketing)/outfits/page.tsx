@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Outfit Builder & Mix-and-Match Canvas | ZEVON Atelier",
   description:
     "Style your full streetwear silhouette on our interactive mix & match canvas and save 10% on complete outfit bundles.",
+  alternates: {
+    canonical: "/outfits",
+  },
 };
 
 export default function OutfitsPage() {

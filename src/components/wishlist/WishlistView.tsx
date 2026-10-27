@@ -175,7 +175,7 @@ export function WishlistView() {
                 >
                   {/* Image & Badges */}
                   <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-950">
-                    <Link href={`/products/${productSlug}`}>
+                    <Link href={productSlug && productSlug !== "$" ? `/products/${productSlug}` : "/shop"}>
                       <img
                         src={imgUrl}
                         alt={item.title || item.name || "Product"}
@@ -199,7 +199,7 @@ export function WishlistView() {
                   <div className="mt-3 flex-1 flex flex-col justify-between space-y-3">
                     <div>
                       <Link
-                        href={`/products/${productSlug}`}
+                        href={productSlug && productSlug !== "$" ? `/products/${productSlug}` : "/shop"}
                         className="block text-xs sm:text-sm font-bold text-neutral-950 dark:text-white tracking-tight line-clamp-1 hover:underline"
                       >
                         {item.title || item.name}

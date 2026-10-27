@@ -284,7 +284,7 @@ export function CartPageView() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <Link
-                          href={`/products/${item.product?.slug || ""}`}
+                          href={item.product?.slug ? `/products/${item.product.slug}` : "/shop"}
                           className="text-sm sm:text-base font-bold text-foreground hover:underline line-clamp-1"
                         >
                           {item.product?.title}

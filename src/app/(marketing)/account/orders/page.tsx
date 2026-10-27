@@ -4,6 +4,9 @@ import { MyOrdersView } from "@/components/orders/MyOrdersView";
 export const metadata: Metadata = {
   title: "My Orders | ZEVON",
   description: "Track and manage your ZEVON streetwear orders, live shipping status, and order history.",
+  alternates: {
+    canonical: "/account/orders",
+  },
 };
 
 export default function AccountOrdersPage() {

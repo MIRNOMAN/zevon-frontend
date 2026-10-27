@@ -229,7 +229,7 @@ export function CartDrawer() {
                   >
                     {/* Thumbnail Image */}
                     <Link
-                      href={`/products/${productSlug}`}
+                      href={item.product?.slug ? `/products/${item.product.slug}` : "/shop"}
                       onClick={closeCart}
                       className="h-20 w-20 sm:h-22 sm:w-22 rounded-xl overflow-hidden bg-neutral-200 dark:bg-neutral-700/60 shrink-0 relative block"
                     >
@@ -245,7 +245,7 @@ export function CartDrawer() {
                       <div>
                         <div className="flex items-start justify-between gap-1.5">
                           <Link
-                            href={`/products/${productSlug}`}
+                            href={item.product?.slug ? `/products/${item.product.slug}` : "/shop"}
                             onClick={closeCart}
                             className="text-xs font-bold text-neutral-900 dark:text-white line-clamp-1 hover:underline"
                           >

@@ -116,12 +116,15 @@ export function CategoryLookbook() {
                 ? category._count.products
                 : fallbackCount;
 
+            const cleanSlug = category.slug?.trim();
             const categoryHref =
-              category.slug === "men"
+              !cleanSlug || cleanSlug === "$" || cleanSlug === "/$"
+                ? "/shop"
+                : cleanSlug === "men"
                 ? "/men"
-                : category.slug === "women"
+                : cleanSlug === "women"
                 ? "/women"
-                : `/shop?category=${category.slug}`;
+                : `/shop?category=${encodeURIComponent(cleanSlug)}`;
 
             const displayName = getCategoryI18nName(category.slug, category.name, t);
             const displayDesc = getCategoryI18nDesc(category.slug, category.description || undefined, t);

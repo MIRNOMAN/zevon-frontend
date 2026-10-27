@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Loyalty Club & Rewards | ZEVON Atelier",
   description:
     "Join the ZEVON Atelier Club. Earn points on every order, redeem for instant cash savings (1 point = 1 BDT), and unlock VIP tier privileges.",
+  alternates: {
+    canonical: "/loyalty",
+  },
 };
 
 export default function LoyaltyPage() {

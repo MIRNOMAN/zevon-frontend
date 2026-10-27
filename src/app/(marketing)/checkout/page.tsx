@@ -6,6 +6,13 @@ import { Loader2 } from "lucide-react";
 export const metadata: Metadata = {
   title: "Checkout | ZEVON Streetwear Archive",
   description: "Complete your luxury heavyweight streetwear order with secure payment options and instant delivery tracking.",
+  alternates: {
+    canonical: "/checkout",
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function CheckoutPage() {

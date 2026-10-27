@@ -4,6 +4,9 @@ import { WishlistView } from "@/components/wishlist/WishlistView";
 export const metadata: Metadata = {
   title: "My Wishlist | ZEVON",
   description: "View and manage your saved streetwear items and wishlist at ZEVON.",
+  alternates: {
+    canonical: "/account/wishlist",
+  },
 };
 
 export default function WishlistPage() {

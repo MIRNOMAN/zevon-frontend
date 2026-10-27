@@ -1,4 +1,5 @@
 import React from "react";
+import type { Metadata } from "next";
 import { HeroBanner } from "@/components/home/HeroBanner";
 import { FlashSaleSection } from "@/components/home/FlashSaleSection";
 import { CategoryLookbook } from "@/components/home/CategoryLookbook";
@@ -7,10 +8,13 @@ import { BrandStoryUSPs } from "@/components/home/BrandStoryUSPs";
 import { ShoppableUGC } from "@/components/home/ShoppableUGC";
 import { NewsletterSection } from "@/components/home/NewsletterSection";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "ZEVON BD | Apparel & Lifestyle — Architectural Streetwear",
   description:
     "Explore ZEVON's SS/26 drops: 380+ GSM heavyweight cotton t-shirts, minimal co-ords, tailored cargo pants, and urban accessories crafted ethically in Bangladesh.",
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export default function HomePage() {

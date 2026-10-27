@@ -86,8 +86,8 @@ export function LookbookView() {
           coordinateY: 42,
           product: {
             id: "p3",
-            title: "ZEVON 280 GSM Acid Washed Boxy Tee",
-            slug: "280-gsm-acid-washed-boxy-tee",
+            title: "ZEVON 380 GSM Onyx Heavyweight Hoodie",
+            slug: "380-gsm-onyx-heavyweight-hoodie",
             basePrice: 1850,
             discountPrice: 1650,
             images: [{ url: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80", isPrimary: true }],
@@ -289,7 +289,7 @@ export function LookbookView() {
                             </div>
 
                             <Link
-                              href={`/products/${product.slug || product.id}`}
+                              href={product.slug ? `/products/${product.slug}` : (product.id ? `/products/${product.id}` : "/shop")}
                               className="px-3.5 py-2 rounded-xl bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 text-xs font-bold hover:opacity-90 transition-all shrink-0 ml-2"
                             >
                               {isBn ? "কিনুন" : "View Piece"}

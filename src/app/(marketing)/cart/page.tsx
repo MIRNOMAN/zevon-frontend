@@ -6,6 +6,9 @@ import { Loader2 } from "lucide-react";
 export const metadata: Metadata = {
   title: "Shopping Bag | ZEVON Streetwear Archive",
   description: "Review your shopping bag, apply promo vouchers and recovery discounts, and proceed to checkout.",
+  alternates: {
+    canonical: "/cart",
+  },
 };
 
 export default function CartPage() {

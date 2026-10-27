@@ -329,7 +329,7 @@ export function MobileDrawer({
               return (
                 <Link
                   key={category.id}
-                  href={category.href || "#"}
+                  href={category.href && category.href !== "#" && category.href !== "/$" ? category.href : (category.id === "men" ? "/men" : category.id === "women" ? "/women" : "/shop")}
                   onClick={onClose}
                   className={cn(
                     "flex items-center justify-between px-4 py-3 rounded-2xl border text-sm font-bold tracking-wide transition-all",

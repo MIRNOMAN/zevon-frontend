@@ -8,8 +8,15 @@ import {
 } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Your Acme Enterprise dashboard overview.",
+  title: "Dashboard | ZEVON Atelier",
+  description: "Your ZEVON dashboard overview.",
+  alternates: {
+    canonical: "/dashboard",
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function DashboardPage() {

@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Size Guide & GSM Specifications | ZEVON Atelier",
   description:
     "Explore precision sizing charts in inches and centimeters, smart fit recommender, and 380+ GSM heavyweight textile specifications.",
+  alternates: {
+    canonical: "/size-guide",
+  },
 };
 
 export default function SizeGuidePage() {

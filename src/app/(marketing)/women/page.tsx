@@ -1,10 +1,14 @@
 import React from "react";
+import type { Metadata } from "next";
 import { StorefrontCatalog } from "@/components/shop/StorefrontCatalog";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Women's Minimalist Co-ords & Essentials | ZEVON BD",
   description:
     "Explore Women's collection at ZEVON: Monochrome ribbed knit co-ord sets, architectural column slip dresses, organic crop tops, and tailored pleated trousers.",
+  alternates: {
+    canonical: "/women",
+  },
 };
 
 const WOMEN_SUBCATEGORIES = [

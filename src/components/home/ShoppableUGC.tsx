@@ -91,9 +91,12 @@ export function ShoppableUGC() {
             const productPrice = linkedProduct
               ? Number(linkedProduct.discountPrice || linkedProduct.basePrice)
               : (fallbackUgc?.taggedProduct?.price ?? 2500);
-            const productHref = linkedProduct
-              ? `/products/${linkedProduct.slug}`
-              : (fallbackUgc?.taggedProduct?.href || "/shop");
+            const productSlug = linkedProduct?.slug?.trim();
+            const productHref = productSlug && productSlug !== "$"
+              ? `/products/${productSlug}`
+              : (fallbackUgc?.taggedProduct?.href && fallbackUgc.taggedProduct.href !== "/$" && fallbackUgc.taggedProduct.href !== "$"
+                ? fallbackUgc.taggedProduct.href
+                : "/shop");
 
             return (
               <div

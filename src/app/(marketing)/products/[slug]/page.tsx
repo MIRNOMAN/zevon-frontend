@@ -1,5 +1,5 @@
 import type { Metadata, ResolvingMetadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect, RedirectType } from "next/navigation";
 import { siteConfig } from "@/config/site";
 import { getProductBySlug, getProducts } from "@/features/products";
 import { ProductDetailView } from "@/components/products/ProductDetailView";
@@ -8,8 +8,19 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
+const DISCONTINUED_SLUGS = new Set([
+  "monochrome-heavy-knit-co-ord-set",
+  "vintage-washed-canvas-distressed-dad-cap",
+  "monochrome-ribbed-knit-two-piece-co-ord",
+  "high-waisted-tailored-pleated-trousers",
+  "280-gsm-acid-washed-boxy-tee",
+  "structured-oversized-trench-coat",
+  "$",
+  "%24",
+]);
+
 // ---------------------------------------------------------------------------
-// Dynamic Metadata (SEO, OpenGraph, Twitter)
+// Dynamic Metadata (SEO, OpenGraph, Twitter, Canonical Tag)
 // ---------------------------------------------------------------------------
 
 export async function generateMetadata(
@@ -17,10 +28,20 @@ export async function generateMetadata(
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { slug } = await params;
+
+  if (DISCONTINUED_SLUGS.has(slug)) {
+    redirect("/shop", RedirectType.replace);
+  }
+
   const product = await getProductBySlug(slug);
 
   if (!product) {
-    return { title: "Product Not Found | ZEVON" };
+    return {
+      title: "Product Not Found | ZEVON",
+      alternates: {
+        canonical: `/products/${encodeURIComponent(slug)}`,
+      },
+    };
   }
 
   const previousImages = (await parent).openGraph?.images ?? [];
@@ -32,14 +53,19 @@ export async function generateMetadata(
       : product.images?.[0]) ||
     "";
 
+  const canonicalPath = `/products/${product.slug || slug}`;
+
   return {
     title: `${displayName} | ZEVON`,
     description: product.description,
+    alternates: {
+      canonical: canonicalPath,
+    },
     openGraph: {
       title: `${displayName} | ZEVON ARCHIVE`,
       description: product.description,
-      url: `${siteConfig.url}/products/${product.slug}`,
-      siteName: siteConfig.name,
+      url: `${siteConfig.url}${canonicalPath}`,
+      siteName: siteConfig.shortName,
       images: [
         {
           url: displayImage,
@@ -66,6 +92,11 @@ export async function generateMetadata(
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
+
+  if (DISCONTINUED_SLUGS.has(slug)) {
+    redirect("/shop", RedirectType.replace);
+  }
+
   const product = await getProductBySlug(slug);
 
   if (!product) {

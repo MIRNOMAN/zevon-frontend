@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Digital Gift Cards & Vouchers | ZEVON Atelier",
   description:
     "Gift the ultimate heavyweight streetwear luxury. Purchase instant digital vouchers with custom amounts or check your remaining balance.",
+  alternates: {
+    canonical: "/gift-cards",
+  },
 };
 
 export default function GiftCardsPage() {

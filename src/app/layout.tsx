@@ -4,26 +4,29 @@ import { StoreProvider } from "@/redux/provider";
 import "./globals.css";
 
 // ---------------------------------------------------------------------------
-// Global Metadata (title template, OG defaults, Twitter card)
+// Global Metadata (title template, OG defaults, Twitter card, canonical)
 // ---------------------------------------------------------------------------
 
 export const metadata: Metadata = {
   title: {
     default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`,
+    template: `%s | ${siteConfig.shortName}`,
   },
   description: siteConfig.description,
   keywords: siteConfig.keywords,
   authors: siteConfig.authors,
   creator: siteConfig.creator,
   metadataBase: new URL(siteConfig.url),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: siteConfig.url,
     title: siteConfig.name,
     description: siteConfig.description,
-    siteName: siteConfig.name,
+    siteName: siteConfig.shortName,
     images: [
       {
         url: siteConfig.ogImage,
@@ -38,7 +41,6 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     images: [siteConfig.ogImage],
-    creator: "@acme",
   },
   robots: {
     index: true,
@@ -57,7 +59,11 @@ export const metadata: Metadata = {
 // Root Layout
 // ---------------------------------------------------------------------------
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning className="h-full antialiased">
       <body suppressHydrationWarning className="min-h-full flex flex-col font-sans bg-background text-foreground">

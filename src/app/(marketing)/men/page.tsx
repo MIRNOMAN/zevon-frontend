@@ -1,10 +1,14 @@
 import React from "react";
+import type { Metadata } from "next";
 import { StorefrontCatalog } from "@/components/shop/StorefrontCatalog";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Men's Streetwear & Heavyweight Essentials | ZEVON BD",
   description:
     "Explore Men's collection at ZEVON: 380+ GSM heavyweight oversized t-shirts, acid wash hoodies, architectural wide-leg cargo pants, and minimal co-ords.",
+  alternates: {
+    canonical: "/men",
+  },
 };
 
 const MEN_SUBCATEGORIES = [

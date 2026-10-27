@@ -175,7 +175,7 @@ export function FeaturedNewArrivals() {
             };
 
             return (
-              <Link key={product.id} href={`/products/${productSlug}`} className="block">
+              <Link key={product.id} href={productSlug && productSlug !== "$" ? `/products/${productSlug}` : "/shop"} className="block">
                 <ProductCard3D
                   product={card3DData}
                   maxTiltAngle={14}

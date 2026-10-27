@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "7-Day Returns & Exchange Policy | ZEVON Atelier",
   description:
     "Learn about our 7-day hassle-free doorstep size exchanges, return eligibility, refund processes, and concierge assistance.",
+  alternates: {
+    canonical: "/returns",
+  },
 };
 
 export default function ReturnsPage() {
